@@ -1,199 +1,307 @@
-# Agent API Endpoints
+# IO MCP SERVER Endpoints
 
-This document describes the available API endpoints for the Agent service.
+This document describes the available API endpoints for the MCP (Model Context Protocol) server implementation in VTEX IO.
+
+## Overview
+
+The MCP server provides three main endpoints that allow LLMs to:
+1. Discover available VTEX API endpoints through OpenAPI specifications
+2. Execute any VTEX API call dynamically based on stored specifications
+3. Upload and manage API specifications (admin only)
 
 ## Base URL
 
-All endpoints are prefixed with: `/_v/agent/v0/`
-
-## Endpoints
-
-### 1. Chat Interface
-
-**Endpoint:** `POST /_v/agent/v0/chat`
-
-A simplified chat interface for conversational interactions with the agent.
-
-**Request Body:**
-
-```json
-{
-  "message": "I want to return order #12345",
-  "session_id": "session_123",
-  "user_id": "user_456"
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "I'll help you process that return request...",
-  "sessionId": "session_123",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "action": {
-    "type": "create_return_request",
-    "status": "completed",
-    "message": "Return request created successfully"
-  }
-}
-```
-
-### 2. Orchestrator Interface
-
-**Endpoint:** `POST /_v/agent/v0/orchestrator`
-
-Full-featured orchestrator interface with complete request/response details.
-
-**Request Body:**
-
-```json
-{
-  "message": "I want to return order #12345",
-  "sessionId": "session_123",
-  "userId": "user_456",
-  "context": {
-    "currentOrder": "12345",
-    "conversationHistory": []
-  }
-}
-```
-
-**Response:**
-
-```json
-{
-  "message": "I'll help you process that return request...",
-  "action": {
-    "type": "create_return_request",
-    "status": "completed",
-    "data": {
-      "returnRequestId": "ret_789",
-      "status": "new",
-      "message": "Return request created successfully"
-    }
-  },
-  "sessionId": "session_123",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "metadata": {
-    "confidence": 0.9,
-    "reasoning": "User clearly wants to return an order",
-    "followUpQuestions": ["What's the reason for the return?"]
-  }
-}
-```
-
-### 3. Health Check
-
-**Endpoint:** `GET /_v/agent/v0/health`
-
-Check the health status of the orchestrator service.
-
-**Response:**
-
-```json
-{
-  "status": "healthy",
-  "service": "orchestrator",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "version": "1.0.0"
-}
-```
-
-### 4. Legacy Prompt (Deprecated)
-
-**Endpoint:** `POST /_v/agent/v0/prompt`
-
-Legacy endpoint for basic prompt processing. Use `/chat` or `/orchestrator` instead.
-
-## Error Responses
-
-All endpoints return standardized error responses:
-
-```json
-{
-  "error": "ERROR_CODE",
-  "message": "Human-readable error message",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "errorId": "error_1234567890_abc123"
-}
-```
-
-### Common Error Codes
-
-- `INVALID_REQUEST` (400): Request validation failed
-- `ORDER_NOT_FOUND` (404): Order not found
-- `RETURN_NOT_ALLOWED` (403): Return not allowed for this order
-- `OPENAI_API_ERROR` (502): AI service temporarily unavailable
-- `OMS_API_ERROR` (502): Order management service unavailable
-- `RETURN_APP_ERROR` (502): Return service unavailable
-- `RATE_LIMIT_EXCEEDED` (429): Too many requests
-- `INTERNAL_ERROR` (500): Unexpected server error
-
-## Usage Examples
-
-### Basic Chat
-
-```bash
-curl -X POST https://your-domain.com/_v/agent/v0/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Hello, I need help with my order",
-    "session_id": "session_123"
-  }'
-```
-
-### Return Request
-
-```bash
-curl -X POST https://your-domain.com/_v/agent/v0/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "I want to return order #12345 because it arrived damaged",
-    "session_id": "session_123",
-    "user_id": "user_456"
-  }'
-```
-
-### Health Check
-
-```bash
-curl -X GET https://your-domain.com/_v/agent/v0/health
-```
-
-## Session Management
-
-- Sessions are automatically created if not provided
-- Session IDs are returned in responses for continuity
-- Conversation context is maintained within sessions
-- Sessions expire after inactivity (configurable)
-
-## Rate Limiting
-
-- Default rate limit: 100 requests per minute per IP
-- Rate limit headers are included in responses
-- Exceeded requests return 429 status code
-
-## Configuration
-
-The service requires the following settings to be configured in the VTEX App Store:
-
-### OpenAI Settings
-
-- **API Key**: Required OpenAI API key for AI functionality
-- **Model**: OpenAI model to use (default: gpt-4o-mini)
-- **Max Tokens**: Maximum response length (default: 1000)
-- **Temperature**: Response randomness (default: 0.7)
-
-### Logging Settings
-
-- **Logging Type**: Test/Development or Production
-- **Log Levels**: Error, Warning, Info, Debug
+All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v0/`
 
 ## Authentication
 
-Currently, all endpoints are public. Authentication can be added by:
+All endpoints require VTEX IO authentication. The server uses the app's built-in authentication tokens and policies.
 
-1. Adding authentication middleware
-2. Configuring routes as private in `service.json`
-3. Implementing token validation in middleware
+## Endpoints
+
+### 1. Get API Definitions
+
+**Endpoint:** `GET /_v/mcp_server/v0/api-definitions`
+
+**Purpose:** Retrieve all available API definitions for LLM consumption
+
+**Query Parameters:**
+- `group` (optional): Filter by specific API group (e.g., "OMS", "Catalog")
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "apiGroups": [
+      {
+        "group": "OMS",
+        "version": "1.0",
+        "spec": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "OMS API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/oms/pvt/orders": {
+              "get": {
+                "operationId": "getOrders",
+                "summary": "Get orders",
+                "parameters": [
+                  {
+                    "name": "page",
+                    "in": "query",
+                    "schema": { "type": "integer" }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Success",
+                    "content": {
+                      "application/json": {
+                        "schema": { "type": "object" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "totalApis": 150,
+    "lastUpdated": "2025-01-12T00:00:00Z"
+  }
+}
+```
+
+**Example Usage:**
+```bash
+# Get all API definitions
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get specific API group
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group=OMS" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### 2. Execute API
+
+**Endpoint:** `POST /_v/mcp_server/v0/execute-api`
+
+**Purpose:** Dynamically execute any VTEX API call based on OpenAPI specifications
+
+**Request Body:**
+```json
+{
+  "apiGroup": "OMS",
+  "operationId": "getOrders",
+  "pathParams": {
+    "orderId": "v123456-01"
+  },
+  "queryParams": {
+    "page": 1,
+    "per_page": 10
+  },
+  "headers": {
+    "Accept": "application/json"
+  },
+  "body": {
+    "status": "invoiced"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "list": [
+      {
+        "orderId": "v123456-01",
+        "status": "invoiced",
+        "creationDate": "2025-01-12T10:00:00Z"
+      }
+    ],
+    "paging": {
+      "total": 1,
+      "pages": 1,
+      "currentPage": 1,
+      "perPage": 10
+    }
+  },
+  "metadata": {
+    "executionTime": 234,
+    "apiGroup": "OMS",
+    "operationId": "getOrders",
+    "method": "GET",
+    "path": "/api/oms/pvt/orders"
+  }
+}
+```
+
+**Example Usage:**
+```bash
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "apiGroup": "OMS",
+    "operationId": "getOrders",
+    "queryParams": {
+      "page": 1,
+      "per_page": 10
+    }
+  }'
+```
+
+### 3. Upload API Specification (Admin Only)
+
+**Endpoint:** `POST /_v/mcp_server/v0/admin/upload-spec`
+
+**Purpose:** Upload or update OpenAPI specifications to MasterData
+
+**Authentication:** Requires admin privileges
+
+**Request Body:**
+```json
+{
+  "apiGroup": "OMS",
+  "version": "1.0",
+  "spec": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "OMS API",
+      "version": "1.0.0",
+      "description": "Order Management System API"
+    },
+    "servers": [
+      {
+        "url": "https://{account}.vtexcommercestable.com.br",
+        "description": "VTEX Commerce API"
+      }
+    ],
+    "paths": {
+      "/api/oms/pvt/orders": {
+        "get": {
+          "operationId": "getOrders",
+          "summary": "Get orders",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "integer",
+                "default": 1
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "list": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "enabled": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "id": "doc_123456",
+  "message": "API specification for group 'OMS' version '1.0' uploaded successfully"
+}
+```
+
+**Example Usage:**
+```bash
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d @oms-api-spec.json
+```
+
+## Error Responses
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "success": false,
+  "error": "Error description"
+}
+```
+
+**Common HTTP Status Codes:**
+- `200`: Success
+- `400`: Bad Request (validation errors)
+- `403`: Forbidden (insufficient privileges)
+- `404`: Not Found (API group or operation not found)
+- `500`: Internal Server Error
+
+## Data Storage
+
+API specifications are stored in MasterData v2 using the data entity `vtex_api_specs` with the following schema:
+
+- `apiGroup`: String - Category/group name (e.g., "OMS", "Catalog")
+- `version`: String - API version (e.g., "1.0", "2.0")
+- `spec`: JSON - Full OpenAPI 3.0 specification
+- `enabled`: Boolean - Whether this API group is active
+- `lastUpdated`: String - ISO timestamp of last update
+
+## Caching
+
+- API definitions are cached for 5 minutes to improve performance
+- Cache is automatically invalidated when specifications are updated
+- Use `Cache-Control` and `ETag` headers for client-side caching
+
+## Rate Limiting
+
+The server respects VTEX IO's built-in rate limiting mechanisms. Consider implementing additional rate limiting per API group if needed.
+
+## Security Considerations
+
+1. All endpoints require proper VTEX IO authentication
+2. Admin endpoints require additional admin token validation
+3. API specifications are validated before storage
+4. Request parameters are sanitized and validated
+5. All API calls are logged for audit purposes
+
+## Integration with LLMs
+
+This MCP server is designed to work with LLMs that support the Model Context Protocol:
+
+1. **Discovery**: LLM calls `getApiDefinitions` to understand available APIs
+2. **Execution**: LLM calls `executeApi` with specific parameters to perform actions
+3. **Management**: Admins can upload new API specifications via `uploadApiSpec`
+
+The OpenAPI specifications provide the LLM with:
+- Available operations and their descriptions
+- Required and optional parameters
+- Expected request/response formats
+- Authentication requirements 

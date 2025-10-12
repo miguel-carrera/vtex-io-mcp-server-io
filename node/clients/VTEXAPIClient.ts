@@ -1,0 +1,250 @@
+import type { InstanceOptions, IOContext } from '@vtex/api'
+import { JanusClient } from '@vtex/api'
+
+export interface VTEXAPIClientOptions {
+  baseURL?: string
+  timeout?: number
+  retries?: number
+}
+
+export interface APIRequestConfig {
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
+  path: string
+  headers?: Record<string, string>
+  query?: Record<string, any>
+  body?: any
+  timeout?: number
+}
+
+export class VTEXAPIClient extends JanusClient {
+  private customBaseURL?: string
+
+  constructor(ctx: IOContext, options?: InstanceOptions & VTEXAPIClientOptions) {
+    super(ctx, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...options?.headers,
+      },
+    })
+
+    this.customBaseURL = options?.baseURL
+  }
+
+  /**
+   * Execute a dynamic API request
+   */
+  public async executeRequest<T = any>(config: APIRequestConfig): Promise<T> {
+    const {
+      method,
+      path,
+      headers = {},
+      query,
+      body,
+      timeout = this.options?.timeout || 10000,
+    } = config
+
+    // Build the full URL
+    const baseURL = this.customBaseURL || this.getBaseURL()
+    const url = this.buildURL(baseURL, path)
+
+    // Prepare headers with authentication
+    const requestHeaders = {
+      ...this.getAuthHeaders(),
+      ...headers,
+    }
+
+    // Prepare request options
+    const requestOptions: any = {
+      method,
+      headers: requestHeaders,
+      timeout,
+      metric: `vtex-api-${method.toLowerCase()}`,
+    }
+
+    // Add query parameters if provided
+    if (query && Object.keys(query).length > 0) {
+      requestOptions.params = query
+    }
+
+    // Add body for POST, PUT, PATCH requests
+    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      requestOptions.data = body
+    }
+
+    try {
+      // Use the appropriate HTTP method based on the request method
+      let response: any
+      switch (method) {
+        case 'GET':
+          response = await this.http.get(url, requestOptions)
+          break
+        case 'POST':
+          response = await this.http.post(url, requestOptions.data, requestOptions)
+          break
+        case 'PUT':
+          response = await this.http.put(url, requestOptions.data, requestOptions)
+          break
+        case 'PATCH':
+          response = await this.http.patch(url, requestOptions.data, requestOptions)
+          break
+        case 'DELETE':
+          response = await this.http.delete(url, requestOptions)
+          break
+        case 'HEAD':
+          response = await this.http.head(url, requestOptions)
+          break
+        case 'OPTIONS':
+          // OPTIONS method not available in VTEX HttpClient, use GET as fallback
+          response = await this.http.get(url, requestOptions)
+          break
+        default:
+          throw new Error(`Unsupported HTTP method: ${method}`)
+      }
+      return response.data
+    } catch (error) {
+      // Log the error for debugging
+      this.context.logger.error({
+        error,
+        data: {
+          method,
+          url,
+          headers: requestHeaders,
+          query,
+          body,
+        },
+        message: `VTEX API request failed: ${method} ${url}`,
+      })
+
+      throw error
+    }
+  }
+
+  /**
+   * Get authentication headers based on context
+   */
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {}
+
+    // Use admin token if available, otherwise use regular auth token
+    if (this.context.adminUserAuthToken) {
+      headers.VtexIdClientAutCookie = this.context.adminUserAuthToken
+    } else if (this.context.authToken) {
+      headers.VtexIdClientAutCookie = this.context.authToken
+    }
+
+    // Add account and workspace headers
+    headers['X-VTEX-API-AccountName'] = this.context.account
+    headers['X-VTEX-API-Workspace'] = this.context.workspace
+
+    return headers
+  }
+
+  /**
+   * Get the base URL for the request
+   */
+  private getBaseURL(): string {
+    // Default to the current account's API
+    return `https://${this.context.account}.vtexcommercestable.com.br`
+  }
+
+  /**
+   * Build the complete URL from base URL and path
+   */
+  private buildURL(baseURL: string, path: string): string {
+    // Ensure path starts with /
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`
+    
+    // Remove trailing slash from baseURL
+    const cleanBaseURL = baseURL.replace(/\/$/, '')
+    
+    return `${cleanBaseURL}${normalizedPath}`
+  }
+
+  /**
+   * Convenience method for GET requests
+   */
+  public async get<T = any>(
+    path: string,
+    query?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.executeRequest<T>({
+      method: 'GET',
+      path,
+      query,
+      headers,
+    })
+  }
+
+  /**
+   * Convenience method for POST requests
+   */
+  public async post<T = any>(
+    path: string,
+    body?: any,
+    query?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.executeRequest<T>({
+      method: 'POST',
+      path,
+      body,
+      query,
+      headers,
+    })
+  }
+
+  /**
+   * Convenience method for PUT requests
+   */
+  public async put<T = any>(
+    path: string,
+    body?: any,
+    query?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.executeRequest<T>({
+      method: 'PUT',
+      path,
+      body,
+      query,
+      headers,
+    })
+  }
+
+  /**
+   * Convenience method for PATCH requests
+   */
+  public async patch<T = any>(
+    path: string,
+    body?: any,
+    query?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.executeRequest<T>({
+      method: 'PATCH',
+      path,
+      body,
+      query,
+      headers,
+    })
+  }
+
+  /**
+   * Convenience method for DELETE requests
+   */
+  public async delete<T = any>(
+    path: string,
+    query?: Record<string, any>,
+    headers?: Record<string, string>
+  ): Promise<T> {
+    return this.executeRequest<T>({
+      method: 'DELETE',
+      path,
+      query,
+      headers,
+    })
+  }
+}

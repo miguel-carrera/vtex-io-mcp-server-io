@@ -8,6 +8,9 @@ import { LRUCache, method, Service } from '@vtex/api'
 
 import { Clients } from './clients'
 import { initialLoad } from './middlewares/initialLoad'
+import { getApiDefinitions } from './middlewares/getApiDefinitions'
+import { executeApi } from './middlewares/executeApi'
+import { uploadApiSpec } from './middlewares/uploadApiSpec'
 
 const TIMEOUT_MS = 10 * 1000
 
@@ -51,8 +54,14 @@ declare global {
 export default new Service({
   clients,
   routes: {
-    initialLoad: method({
-      POST: [initialLoad]
+    getApiDefinitions: method({
+      GET: [initialLoad, getApiDefinitions]
+    }),
+    executeApi: method({
+      POST: [initialLoad, executeApi]
+    }),
+    uploadApiSpec: method({
+      POST: [initialLoad, uploadApiSpec]
     })
   },
 })

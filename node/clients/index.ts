@@ -3,6 +3,7 @@ import { IOClients } from '@vtex/api'
 import { ReturnApp } from './ReturnApp'
 import { OMSCustom } from './OMSCustom'
 import KiboAPIClient from './KiboAPIClient'
+import { VTEXAPIClient } from './VTEXAPIClient'
 
 // Extend the default IOClients implementation with our own custom clients.
 export class Clients extends IOClients {
@@ -16,5 +17,9 @@ export class Clients extends IOClients {
 
   public get kibo() {
     return this.getOrSet('kibo', KiboAPIClient)
+  }
+
+  public get vtexApi() {
+    return this.getOrSet('vtexApi', VTEXAPIClient)
   }
 }

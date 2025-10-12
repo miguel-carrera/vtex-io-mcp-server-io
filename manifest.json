@@ -1,6 +1,6 @@
 {
   "name": "vtex-io-mcp-server",
-  "vendor": "vendor",
+  "vendor": "odp",
   "version": "0.0.1",
   "title": "MCP Server for VTEX IO",
   "description": "MCP Server developed in VTEX IO to provide VTEX AI capabilities to agents",
@@ -93,6 +93,13 @@
     },
     {
       "name": "ADMIN_DS"
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "api.vtex.com",
+        "path": "/api/dataentities/vtex_mcp_api_specs/*"
+      }
     }
   ],
   "settingsSchema": {
