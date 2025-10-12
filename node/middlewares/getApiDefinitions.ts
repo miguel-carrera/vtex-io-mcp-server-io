@@ -1,4 +1,4 @@
-import type { MCPApiDefinitionResponse, APIGroup } from '../types/mcp'
+import type { MCPApiDefinitionResponse, APIGroupMetadata } from '../types/mcp'
 import { MasterDataService } from '../services/masterDataService'
 import { logToMasterData } from '../utils/logging'
 
@@ -17,7 +17,7 @@ export async function getApiDefinitions(
     // Initialize MasterData service
     const masterDataService = new MasterDataService(ctx)
 
-    let apiGroups: APIGroup[]
+    let apiGroups: APIGroupMetadata[]
 
     if (group) {
       // Get specific API group
@@ -35,63 +35,33 @@ export async function getApiDefinitions(
         return
       }
 
-      // Fetch the actual OpenAPI spec from URL
-      const spec = await masterDataService.fetchSpecFromUrl(
-        specMetadata.specUrl
-      )
-
       apiGroups = [
         {
           group: specMetadata.apiGroup,
           version: specMetadata.version,
-          spec,
+          operationCount: specMetadata.operationCount || 0,
+          enabled: specMetadata.enabled,
+          description: specMetadata.description,
         },
       ]
     } else {
       // Get all enabled API groups
       const specsMetadata = await masterDataService.getAPISpecs()
 
-      apiGroups = await Promise.all(
-        specsMetadata.map(async (specMetadata) => {
-          const spec = await masterDataService.fetchSpecFromUrl(
-            specMetadata.specUrl
-          )
-
-          return {
-            group: specMetadata.apiGroup,
-            version: specMetadata.version,
-            spec,
-          }
-        })
-      )
+      apiGroups = specsMetadata.map((specMetadata) => ({
+        group: specMetadata.apiGroup,
+        version: specMetadata.version,
+        operationCount: specMetadata.operationCount || 0,
+        enabled: specMetadata.enabled,
+        description: specMetadata.description,
+      }))
     }
 
     // Calculate total number of operations across all specs
-    const totalApis = apiGroups.reduce((total, apiGroup) => {
-      const operations = Object.values(apiGroup.spec.paths || {}).reduce(
-        (pathTotal: number, pathItem: any) => {
-          const methods = [
-            'get',
-            'post',
-            'put',
-            'patch',
-            'delete',
-            'head',
-            'options',
-          ]
-
-          return (
-            pathTotal +
-            methods.filter(
-              (method) => pathItem[method as keyof typeof pathItem]
-            ).length
-          )
-        },
-        0
-      )
-
-      return total + operations
-    }, 0)
+    const totalApis = apiGroups.reduce(
+      (total, apiGroup) => total + apiGroup.operationCount,
+      0
+    )
 
     const response: MCPApiDefinitionResponse = {
       apiGroups,

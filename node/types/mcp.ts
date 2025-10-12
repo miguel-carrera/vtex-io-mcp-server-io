@@ -5,14 +5,41 @@ export interface MCPApiDefinitionRequest {
 }
 
 export interface MCPApiDefinitionResponse {
-  apiGroups: APIGroup[]
+  apiGroups: APIGroupMetadata[]
   totalApis: number
+}
+
+export interface APIGroupMetadata {
+  group: string
+  version: string
+  operationCount: number
+  enabled: boolean
+  description?: string
 }
 
 export interface APIGroup {
   group: string
   version: string
   spec: import('./openapi').OpenAPISpec
+}
+
+export interface MCPApiSpecResponse {
+  group: string
+  version: string
+  spec: import('./openapi').OpenAPISpec
+  operationCount: number
+  enabled: boolean
+  description?: string
+}
+
+export interface MCPApiPathSpecResponse {
+  group: string
+  version: string
+  path: string
+  pathSpec: import('./openapi').OpenAPIPathItem
+  operationCount: number
+  enabled: boolean
+  description?: string
 }
 
 export interface MCPExecuteApiRequest {

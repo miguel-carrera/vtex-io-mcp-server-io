@@ -10,6 +10,14 @@
       "path": "/_v/mcp_server/v0/api-definitions",
       "public": true
     },
+    "getApiSpec": {
+      "path": "/_v/mcp_server/v0/api-spec/:group",
+      "public": true
+    },
+    "getApiPathSpec": {
+      "path": "/_v/mcp_server/v0/api-spec/:group/:path*",
+      "public": true
+    },
     "executeApi": {
       "path": "/_v/mcp_server/v0/execute-api",
       "public": true

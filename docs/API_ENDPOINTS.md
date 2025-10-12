@@ -4,10 +4,13 @@ This document describes the available API endpoints for the MCP (Model Context P
 
 ## Overview
 
-The MCP server provides three main endpoints that allow LLMs to:
+The MCP server provides five main endpoints that allow LLMs to:
+
 1. Discover available VTEX API endpoints through OpenAPI specifications
-2. Execute any VTEX API call dynamically based on stored specifications
-3. Upload and manage API specifications (admin only)
+2. Retrieve individual API group specifications in detail
+3. Retrieve specific API path specifications for granular access
+4. Execute any VTEX API call dynamically based on stored specifications
+5. Upload and manage API specifications (admin only)
 
 ## Base URL
 
@@ -23,12 +26,14 @@ All endpoints require VTEX IO authentication. The server uses the app's built-in
 
 **Endpoint:** `GET /_v/mcp_server/v0/api-definitions`
 
-**Purpose:** Retrieve all available API definitions for LLM consumption
+**Purpose:** Discover available API groups and their metadata (for detailed specs, use the individual API spec endpoint)
 
 **Query Parameters:**
+
 - `group` (optional): Filter by specific API group (e.g., "OMS", "Catalog")
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -37,47 +42,25 @@ All endpoints require VTEX IO authentication. The server uses the app's built-in
       {
         "group": "OMS",
         "version": "1.0",
-        "spec": {
-          "openapi": "3.0.0",
-          "info": {
-            "title": "OMS API",
-            "version": "1.0.0"
-          },
-          "paths": {
-            "/api/oms/pvt/orders": {
-              "get": {
-                "operationId": "getOrders",
-                "summary": "Get orders",
-                "parameters": [
-                  {
-                    "name": "page",
-                    "in": "query",
-                    "schema": { "type": "integer" }
-                  }
-                ],
-                "responses": {
-                  "200": {
-                    "description": "Success",
-                    "content": {
-                      "application/json": {
-                        "schema": { "type": "object" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+        "operationCount": 45,
+        "enabled": true,
+        "description": "Order Management System API"
+      },
+      {
+        "group": "Catalog",
+        "version": "2.0",
+        "operationCount": 32,
+        "enabled": true,
+        "description": "Product Catalog API"
       }
     ],
-    "totalApis": 150,
-    "lastUpdated": "2025-01-12T00:00:00Z"
+    "totalApis": 77
   }
 }
 ```
 
 **Example Usage:**
+
 ```bash
 # Get all API definitions
 curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions" \
@@ -88,13 +71,178 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-### 2. Execute API
+### 2. Get Single API Specification
+
+**Endpoint:** `GET /_v/mcp_server/v0/api-spec/{group}`
+
+**Purpose:** Retrieve a specific API group's complete OpenAPI specification
+
+**Path Parameters:**
+
+- `group` (required): The API group name (e.g., "OMS", "Catalog")
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "group": "OMS",
+    "version": "1.0",
+    "spec": {
+      "openapi": "3.0.0",
+      "info": {
+        "title": "OMS API",
+        "version": "1.0.0",
+        "description": "Order Management System API"
+      },
+      "servers": [
+        {
+          "url": "https://{account}.vtexcommercestable.com.br",
+          "description": "VTEX Commerce API"
+        }
+      ],
+      "paths": {
+        "/api/oms/pvt/orders": {
+          "get": {
+            "operationId": "getOrders",
+            "summary": "Get orders",
+            "parameters": [
+              {
+                "name": "page",
+                "in": "query",
+                "required": false,
+                "schema": {
+                  "type": "integer",
+                  "default": 1
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Success",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "operationCount": 45,
+    "enabled": true,
+    "description": "Order Management System API"
+  }
+}
+```
+
+**Example Usage:**
+
+```bash
+# Get specific API group specification
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### 3. Get API Path Specification
+
+**Endpoint:** `GET /_v/mcp_server/v0/api-spec/{group}/{path}`
+
+**Purpose:** Retrieve a specific API path's OpenAPI specification for granular access
+
+**Path Parameters:**
+
+- `group` (required): The API group name (e.g., "OMS", "Catalog")
+- `path` (required): The specific API path (e.g., "/api/oms/pvt/orders", "/api/catalog/pvt/product")
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "group": "OMS",
+    "version": "1.0",
+    "path": "/api/oms/pvt/orders",
+    "pathSpec": {
+      "get": {
+        "operationId": "getOrders",
+        "summary": "Get orders",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createOrder",
+        "summary": "Create a new order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully"
+          }
+        }
+      }
+    },
+    "operationCount": 2,
+    "enabled": true,
+    "description": "Order Management System API"
+  }
+}
+```
+
+**Example Usage:**
+
+```bash
+# Get specific API path specification
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS/api%2Foms%2Fpvt%2Forders" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Note: The path parameter should be URL encoded
+# "/api/oms/pvt/orders" becomes "api%2Foms%2Fpvt%2Forders"
+```
+
+### 4. Execute API
 
 **Endpoint:** `POST /_v/mcp_server/v0/execute-api`
 
 **Purpose:** Dynamically execute any VTEX API call based on OpenAPI specifications
 
 **Request Body:**
+
 ```json
 {
   "apiGroup": "OMS",
@@ -116,6 +264,7 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -145,6 +294,7 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group
 ```
 
 **Example Usage:**
+
 ```bash
 curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
   -H "Content-Type: application/json" \
@@ -159,7 +309,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
   }'
 ```
 
-### 3. Upload API Specification (Admin Only)
+### 5. Upload API Specification (Admin Only)
 
 **Endpoint:** `POST /_v/mcp_server/v0/admin/upload-spec`
 
@@ -168,6 +318,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 **Authentication:** Requires admin privileges
 
 **Request Body:**
+
 ```json
 {
   "apiGroup": "OMS",
@@ -180,6 +331,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -189,6 +341,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 ```
 
 **Example Usage:**
+
 ```bash
 curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
   -H "Content-Type: application/json" \
@@ -215,6 +368,7 @@ All endpoints return consistent error responses:
 ```
 
 **Common HTTP Status Codes:**
+
 - `200`: Success
 - `400`: Bad Request (validation errors)
 - `403`: Forbidden (insufficient privileges)
@@ -265,7 +419,8 @@ This MCP server is designed to work with LLMs that support the Model Context Pro
 3. **Management**: Admins can upload new API specification URLs via `uploadApiSpec`
 
 The OpenAPI specifications provide the LLM with:
+
 - Available operations and their descriptions
 - Required and optional parameters
 - Expected request/response formats
-- Authentication requirements 
+- Authentication requirements
