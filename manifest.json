@@ -1,0 +1,147 @@
+{
+  "name": "vtex-io-mcp-server",
+  "vendor": "vendor",
+  "version": "0.0.1",
+  "title": "MCP Server for VTEX IO",
+  "description": "MCP Server developed in VTEX IO to provide VTEX AI capabilities to agents",
+  "mustUpdateAt": "2018-01-04",
+  "categories": [],
+  "dependencies": {},
+  "builders": {
+    "node": "7.x",
+    "docs": "0.x"
+  },
+  "scripts": {
+    "prereleasy": "bash lint.sh"
+  },
+  "credentialType": "absolute",
+  "policies": [
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "*",
+        "path": "/api/*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "{{account}}.vtexcommercestable.com.br",
+        "path": "/api/*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "{{account}}.myvtex.com",
+        "path": "/_v/*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "fulfillment.vtexcommerce.com.br",
+        "path": "/api/*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "portal.vtexcommercestable.com.br",
+        "path": "/api/*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
+        "host": "api.vtex.com",
+        "path": "/api/dataentities/*"
+      }
+    },
+    {
+      "name": "colossus-fire-event"
+    },
+    {
+      "name": "colossus-write-logs"
+    },
+    {
+      "name": "OMSViewer"
+    },
+    {
+      "name": "ListOrders"
+    },
+    {
+      "name": "LogisticsAdmin"
+    },
+    {
+      "name": "ShippingAction"
+    },
+    {
+      "name": "RefundAction"
+    },
+    {
+      "name": "CancelAction"
+    },
+    {
+      "name": "PaymentAction"
+    },
+    {
+      "name": "Changes"
+    },
+    {
+      "name": "WorkflowAction"
+    },
+    {
+      "name": "ADMIN_DS"
+    }
+  ],
+  "settingsSchema": {
+    "title": "ODP Business Rules",
+    "type": "object",
+    "properties": {
+      "logSettings": {
+        "title": "Logging Settings",
+        "description": "Configuration for application logging",
+        "type": "object",
+        "properties": {
+          "loggingType": {
+            "title": "Type",
+            "description": "Select the logging type for the application. Test/Development will log in MasterData while Production will log into logging system",
+            "type": "string",
+            "enum": [
+              "Disabled",
+              "Test/Development",
+              "Production"
+            ],
+            "default": "Test/Development"
+          },
+          "logError": {
+            "title": "Log Error",
+            "description": "Enable or disable error logging",
+            "type": "boolean",
+            "default": true
+          },
+          "logWarn": {
+            "title": "Log Warning",
+            "description": "Enable or disable warning logging",
+            "type": "boolean",
+            "default": true
+          },
+          "logInfo": {
+            "title": "Log Info",
+            "description": "Enable or disable info logging",
+            "type": "boolean",
+            "default": true
+          },
+          "logDebug": {
+            "title": "Log Debug",
+            "description": "Enable or disable debug logging",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/vtex/node-vtex-api/master/gen/manifest.schema"
+}
