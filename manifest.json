@@ -1,6 +1,6 @@
 {
   "name": "vtex-io-mcp-server",
-  "vendor": "odp",
+  "vendor": "vendor",
   "version": "0.0.1",
   "title": "MCP Server for VTEX IO",
   "description": "MCP Server developed in VTEX IO to provide VTEX AI capabilities to agents",
@@ -115,11 +115,7 @@
             "title": "Type",
             "description": "Select the logging type for the application. Test/Development will log in MasterData while Production will log into logging system",
             "type": "string",
-            "enum": [
-              "Disabled",
-              "Test/Development",
-              "Production"
-            ],
+            "enum": ["Disabled", "Test/Development", "Production"],
             "default": "Test/Development"
           },
           "logError": {

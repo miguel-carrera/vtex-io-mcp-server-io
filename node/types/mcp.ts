@@ -7,7 +7,6 @@ export interface MCPApiDefinitionRequest {
 export interface MCPApiDefinitionResponse {
   apiGroups: APIGroup[]
   totalApis: number
-  lastUpdated: string
 }
 
 export interface APIGroup {
@@ -42,7 +41,6 @@ export interface MCPUploadSpecRequest {
   specUrl: string
   enabled?: boolean
   description?: string
-  tags?: string[]
 }
 
 export interface MCPUploadSpecResponse {
@@ -52,4 +50,12 @@ export interface MCPUploadSpecResponse {
 }
 
 // Re-export OpenAPI types from the dedicated module
-export type { OpenAPISpec, OpenAPIPathItem as PathItem, OpenAPIOperation as Operation, OpenAPIParameter as Parameter, OpenAPIRequestBody as RequestBody, OpenAPIMediaType as MediaType, OpenAPIResponse as Response } from './openapi'
+export type {
+  OpenAPISpec,
+  OpenAPIPathItem as PathItem,
+  OpenAPIOperation as Operation,
+  OpenAPIParameter as Parameter,
+  OpenAPIRequestBody as RequestBody,
+  OpenAPIMediaType as MediaType,
+  OpenAPIResponse as Response,
+} from './openapi'

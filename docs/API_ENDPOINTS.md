@@ -163,7 +163,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 
 **Endpoint:** `POST /_v/mcp_server/v0/admin/upload-spec`
 
-**Purpose:** Upload or update OpenAPI specifications to MasterData
+**Purpose:** Upload or update OpenAPI specification URLs to MasterData
 
 **Authentication:** Requires admin privileges
 
@@ -172,59 +172,9 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 {
   "apiGroup": "OMS",
   "version": "1.0",
-  "spec": {
-    "openapi": "3.0.0",
-    "info": {
-      "title": "OMS API",
-      "version": "1.0.0",
-      "description": "Order Management System API"
-    },
-    "servers": [
-      {
-        "url": "https://{account}.vtexcommercestable.com.br",
-        "description": "VTEX Commerce API"
-      }
-    ],
-    "paths": {
-      "/api/oms/pvt/orders": {
-        "get": {
-          "operationId": "getOrders",
-          "summary": "Get orders",
-          "parameters": [
-            {
-              "name": "page",
-              "in": "query",
-              "required": false,
-              "schema": {
-                "type": "integer",
-                "default": 1
-              }
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "Success",
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "list": {
-                        "type": "array",
-                        "items": {
-                          "type": "object"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
+  "specUrl": "https://developers.vtex.com/api/openapi/orders-api",
+  "description": "Order Management System API",
+  "tags": ["orders", "oms", "commerce"],
   "enabled": true
 }
 ```
@@ -234,7 +184,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 {
   "success": true,
   "id": "doc_123456",
-  "message": "API specification for group 'OMS' version '1.0' uploaded successfully"
+  "message": "API specification URL for group 'OMS' version '1.0' uploaded successfully"
 }
 ```
 
@@ -243,7 +193,14 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d @oms-api-spec.json
+  -d '{
+    "apiGroup": "OMS",
+    "version": "1.0",
+    "specUrl": "https://developers.vtex.com/api/openapi/orders-api",
+    "description": "Order Management System API",
+    "tags": ["orders", "oms", "commerce"],
+    "enabled": true
+  }'
 ```
 
 ## Error Responses
@@ -266,18 +223,23 @@ All endpoints return consistent error responses:
 
 ## Data Storage
 
-API specifications are stored in MasterData v2 using the data entity `vtex_api_specs` with the following schema:
+API specification metadata is stored in MasterData v2 using the data entity `vtex_mcp_api_specs` with the following schema:
 
 - `apiGroup`: String - Category/group name (e.g., "OMS", "Catalog")
 - `version`: String - API version (e.g., "1.0", "2.0")
-- `spec`: JSON - Full OpenAPI 3.0 specification
+- `specUrl`: String - URL to the OpenAPI 3.0 specification (e.g., "https://developers.vtex.com/api/openapi/orders-api")
+- `description`: String - Human-readable description of the API group
+- `tags`: Array of Strings - Tags for categorization and filtering
 - `enabled`: Boolean - Whether this API group is active
 - `lastUpdated`: String - ISO timestamp of last update
 
+The actual OpenAPI specifications are fetched dynamically from the provided URLs using VTEX IO's HTTP client, which includes built-in caching capabilities.
+
 ## Caching
 
-- API definitions are cached for 5 minutes to improve performance
-- Cache is automatically invalidated when specifications are updated
+- OpenAPI specifications are cached by VTEX IO's HTTP client when fetched from URLs
+- Cache duration follows the HTTP cache headers from the source URLs
+- API definitions are fetched dynamically, ensuring always up-to-date specifications
 - Use `Cache-Control` and `ETag` headers for client-side caching
 
 ## Rate Limiting
@@ -288,9 +250,11 @@ The server respects VTEX IO's built-in rate limiting mechanisms. Consider implem
 
 1. All endpoints require proper VTEX IO authentication
 2. Admin endpoints require additional admin token validation
-3. API specifications are validated before storage
-4. Request parameters are sanitized and validated
-5. All API calls are logged for audit purposes
+3. API specification URLs are validated before storage
+4. OpenAPI specifications are validated when fetched from URLs
+5. Request parameters are sanitized and validated
+6. All API calls are logged for audit purposes
+7. External URL access is controlled by VTEX IO's outbound access policies
 
 ## Integration with LLMs
 
@@ -298,7 +262,7 @@ This MCP server is designed to work with LLMs that support the Model Context Pro
 
 1. **Discovery**: LLM calls `getApiDefinitions` to understand available APIs
 2. **Execution**: LLM calls `executeApi` with specific parameters to perform actions
-3. **Management**: Admins can upload new API specifications via `uploadApiSpec`
+3. **Management**: Admins can upload new API specification URLs via `uploadApiSpec`
 
 The OpenAPI specifications provide the LLM with:
 - Available operations and their descriptions

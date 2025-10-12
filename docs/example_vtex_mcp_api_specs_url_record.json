@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "specUrl": "https://developers.vtex.com/api/openapi/orders-api",
   "enabled": true,
-  "lastUpdated": "2025-01-12T10:30:00Z",
   "description": "VTEX Orders API for managing orders, invoices, and order status operations",
-  "tags": ["orders", "invoices", "oms", "ecommerce", "vtex"],
-  "operationCount": 45,
-  "uploadedBy": "admin@company.com",
-  "uploadedAt": "2025-01-12T10:00:00Z"
+  "operationCount": 45
 }

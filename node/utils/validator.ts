@@ -10,7 +10,8 @@ export class RequestValidator {
       throw new Error('Request body must be a valid JSON object')
     }
 
-    const { apiGroup, operationId, parameters, pathParams, queryParams, body } = request
+    const { apiGroup, operationId, parameters, pathParams, queryParams, body } =
+      request
 
     // Required fields
     if (!apiGroup || typeof apiGroup !== 'string') {
@@ -22,15 +23,24 @@ export class RequestValidator {
     }
 
     // Optional fields validation
-    if (parameters !== undefined && (typeof parameters !== 'object' || parameters === null)) {
+    if (
+      parameters !== undefined &&
+      (typeof parameters !== 'object' || parameters === null)
+    ) {
       throw new Error('parameters must be an object if provided')
     }
 
-    if (pathParams !== undefined && (typeof pathParams !== 'object' || pathParams === null)) {
+    if (
+      pathParams !== undefined &&
+      (typeof pathParams !== 'object' || pathParams === null)
+    ) {
       throw new Error('pathParams must be an object if provided')
     }
 
-    if (queryParams !== undefined && (typeof queryParams !== 'object' || queryParams === null)) {
+    if (
+      queryParams !== undefined &&
+      (typeof queryParams !== 'object' || queryParams === null)
+    ) {
       throw new Error('queryParams must be an object if provided')
     }
 
@@ -52,7 +62,7 @@ export class RequestValidator {
       throw new Error('Request body must be a valid JSON object')
     }
 
-    const { apiGroup, version, specUrl, enabled, description, tags } = request
+    const { apiGroup, version, specUrl, enabled, description } = request
 
     // Required fields
     if (!apiGroup || typeof apiGroup !== 'string') {
@@ -83,24 +93,12 @@ export class RequestValidator {
       throw new Error('description must be a string if provided')
     }
 
-    if (tags !== undefined) {
-      if (!Array.isArray(tags)) {
-        throw new Error('tags must be an array if provided')
-      }
-      for (const tag of tags) {
-        if (typeof tag !== 'string') {
-          throw new Error('All tags must be strings')
-        }
-      }
-    }
-
     return {
       apiGroup,
       version,
       specUrl,
       enabled: enabled !== undefined ? enabled : true,
       description,
-      tags,
     }
   }
 
@@ -114,7 +112,9 @@ export class RequestValidator {
 
     // Check required fields
     if (!spec.openapi || typeof spec.openapi !== 'string') {
-      throw new Error('OpenAPI spec must have an "openapi" field with version string')
+      throw new Error(
+        'OpenAPI spec must have an "openapi" field with version string'
+      )
     }
 
     if (!spec.info || typeof spec.info !== 'object') {
@@ -140,21 +140,39 @@ export class RequestValidator {
       }
 
       // Check for valid HTTP methods
-      const validMethods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
+      const validMethods = [
+        'get',
+        'post',
+        'put',
+        'patch',
+        'delete',
+        'head',
+        'options',
+      ]
+
       for (const [method, operation] of Object.entries(pathItem)) {
         if (validMethods.includes(method)) {
           if (typeof operation !== 'object' || operation === null) {
-            throw new Error(`Operation ${method.toUpperCase()} for path "${path}" must be a valid operation object`)
+            throw new Error(
+              `Operation ${method.toUpperCase()} for path "${path}" must be a valid operation object`
+            )
           }
 
           // Check for operationId
-          if (!operation.operationId || typeof operation.operationId !== 'string') {
-            throw new Error(`Operation ${method.toUpperCase()} for path "${path}" must have an "operationId"`)
+          if (
+            !operation.operationId ||
+            typeof operation.operationId !== 'string'
+          ) {
+            throw new Error(
+              `Operation ${method.toUpperCase()} for path "${path}" must have an "operationId"`
+            )
           }
 
           // Check for responses
           if (!operation.responses || typeof operation.responses !== 'object') {
-            throw new Error(`Operation ${method.toUpperCase()} for path "${path}" must have a "responses" object`)
+            throw new Error(
+              `Operation ${method.toUpperCase()} for path "${path}" must have a "responses" object`
+            )
           }
         }
       }
@@ -173,7 +191,9 @@ export class RequestValidator {
 
     // Check for valid characters (alphanumeric, underscore, hyphen)
     if (!/^[a-zA-Z0-9_-]+$/.test(apiGroup)) {
-      throw new Error('API group can only contain alphanumeric characters, underscores, and hyphens')
+      throw new Error(
+        'API group can only contain alphanumeric characters, underscores, and hyphens'
+      )
     }
 
     if (apiGroup.length > 50) {
@@ -190,8 +210,14 @@ export class RequestValidator {
     }
 
     // Basic semantic version validation
-    if (!/^[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/.test(version)) {
-      throw new Error('Version must follow semantic versioning format (e.g., "1.0.0", "2.1.0-beta")')
+    if (
+      !/^[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/.test(
+        version
+      )
+    ) {
+      throw new Error(
+        'Version must follow semantic versioning format (e.g., "1.0.0", "2.1.0-beta")'
+      )
     }
   }
 
@@ -205,7 +231,9 @@ export class RequestValidator {
 
     // Check for valid characters (alphanumeric, underscore, hyphen)
     if (!/^[a-zA-Z0-9_-]+$/.test(operationId)) {
-      throw new Error('Operation ID can only contain alphanumeric characters, underscores, and hyphens')
+      throw new Error(
+        'Operation ID can only contain alphanumeric characters, underscores, and hyphens'
+      )
     }
 
     if (operationId.length > 100) {

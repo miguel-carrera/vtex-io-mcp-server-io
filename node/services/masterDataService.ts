@@ -1,16 +1,13 @@
 import type { OpenAPISpec } from '../types/openapi'
+import { logToMasterData } from '../utils/logging'
 
 export interface APISpecData {
   apiGroup: string
   version: string
   specUrl: string
   enabled: boolean
-  lastUpdated: string
   description?: string
-  tags?: string[]
   operationCount?: number
-  uploadedBy?: string
-  uploadedAt?: string
 }
 
 export interface APISpecDocument extends APISpecData {
@@ -19,6 +16,7 @@ export interface APISpecDocument extends APISpecData {
 
 export class MasterDataService {
   private readonly dataEntity = 'vtex_mcp_api_specs'
+  private readonly schema = 'api_specs'
   private readonly cache = new Map<string, APISpecDocument>()
   private readonly cacheTTL = 5 * 60 * 1000 // 5 minutes
   private readonly cacheTimestamps = new Map<string, number>()
@@ -30,10 +28,11 @@ export class MasterDataService {
    */
   public async getAPISpecs(): Promise<APISpecDocument[]> {
     const cacheKey = 'all_specs'
-    
+
     // Check cache first
     if (this.isCacheValid(cacheKey)) {
       const cached = this.cache.get(cacheKey)
+
       if (cached) {
         return [cached]
       }
@@ -42,12 +41,21 @@ export class MasterDataService {
     try {
       const response = await this.ctx.clients.masterdata.searchDocuments({
         dataEntity: this.dataEntity,
-        fields: ['id', 'apiGroup', 'version', 'spec', 'enabled', 'lastUpdated'],
+        fields: [
+          'id',
+          'apiGroup',
+          'version',
+          'specUrl',
+          'enabled',
+          'description',
+          'operationCount',
+        ],
         where: 'enabled=true',
         pagination: {
           page: 1,
           pageSize: 100,
         },
+        schema: this.schema,
       })
 
       const specs = response.map((doc: any) => ({
@@ -56,23 +64,22 @@ export class MasterDataService {
         version: doc.version,
         specUrl: doc.specUrl,
         enabled: doc.enabled,
-        lastUpdated: doc.lastUpdated,
         description: doc.description,
-        tags: doc.tags,
         operationCount: doc.operationCount,
-        uploadedBy: doc.uploadedBy,
-        uploadedAt: doc.uploadedAt,
       }))
 
       // Cache the results
       this.setCache(cacheKey, specs as any)
-      
+
       return specs
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        message: 'Failed to retrieve API specifications from MasterData',
-      })
+      await logToMasterData(
+        this.ctx,
+        'getAPISpecs',
+        'masterDataService',
+        'error',
+        error
+      )
       throw new Error('Failed to retrieve API specifications')
     }
   }
@@ -80,12 +87,15 @@ export class MasterDataService {
   /**
    * Get a specific API group's specification
    */
-  public async getAPISpecByGroup(group: string): Promise<APISpecDocument | null> {
+  public async getAPISpecByGroup(
+    group: string
+  ): Promise<APISpecDocument | null> {
     const cacheKey = `group_${group}`
-    
+
     // Check cache first
     if (this.isCacheValid(cacheKey)) {
       const cached = this.cache.get(cacheKey)
+
       if (cached) {
         return cached
       }
@@ -94,12 +104,21 @@ export class MasterDataService {
     try {
       const response = await this.ctx.clients.masterdata.searchDocuments({
         dataEntity: this.dataEntity,
-        fields: ['id', 'apiGroup', 'version', 'specUrl', 'enabled', 'lastUpdated', 'description', 'tags', 'operationCount', 'uploadedBy', 'uploadedAt'],
+        fields: [
+          'id',
+          'apiGroup',
+          'version',
+          'specUrl',
+          'enabled',
+          'description',
+          'operationCount',
+        ],
         where: `apiGroup=${group} AND enabled=true`,
         pagination: {
           page: 1,
           pageSize: 1,
         },
+        schema: this.schema,
       })
 
       if (response.length === 0) {
@@ -113,25 +132,25 @@ export class MasterDataService {
         version: doc.version,
         specUrl: doc.specUrl,
         enabled: doc.enabled,
-        lastUpdated: doc.lastUpdated,
         description: doc.description,
-        tags: doc.tags,
         operationCount: doc.operationCount,
-        uploadedBy: doc.uploadedBy,
-        uploadedAt: doc.uploadedAt,
       }
 
       // Cache the result
       this.setCache(cacheKey, spec)
-      
+
       return spec
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data: { group },
-        message: 'Failed to retrieve API specification by group from MasterData',
-      })
-      throw new Error(`Failed to retrieve API specification for group: ${group}`)
+      await logToMasterData(
+        this.ctx,
+        'getAPISpecByGroup',
+        'masterDataService',
+        'error',
+        error
+      )
+      throw new Error(
+        `Failed to retrieve API specification for group: ${group}`
+      )
     }
   }
 
@@ -140,50 +159,44 @@ export class MasterDataService {
    */
   public async saveAPISpec(data: APISpecData): Promise<APISpecDocument> {
     try {
-      // Check if spec already exists
       const existing = await this.findExistingSpec(data.apiGroup, data.version)
-      
+
       const specData = {
         ...data,
-        lastUpdated: new Date().toISOString(),
       }
 
-      let result: any
+      // Create or update existing spec
+      const result =
+        await this.ctx.clients.masterdata.createOrUpdateEntireDocument({
+          dataEntity: this.dataEntity,
+          fields: specData,
+          id: existing?.id,
+          schema: this.schema,
+        })
+
+      // Always clear the "all specs" cache when data changes
+      this.clearCache('all_specs')
 
       if (existing) {
-        // Update existing spec
-        result = await (this.ctx.clients.masterdata as any).updateDocument({
-          dataEntity: this.dataEntity,
-          id: existing.id,
-          fields: specData,
-        })
-        
-        // Update cache
+        // Update cache for the specific group
         this.setCache(`group_${data.apiGroup}`, {
           id: existing.id,
           ...specData,
         })
-      } else {
-        // Create new spec
-        result = await this.ctx.clients.masterdata.createDocument({
-          dataEntity: this.dataEntity,
-          fields: specData,
-        })
       }
 
-      // Clear the "all specs" cache since it's now outdated
-      this.clearCache('all_specs')
-
       return {
-        id: result.DocumentId || existing?.id || result.id,
+        id: result.DocumentId || existing?.id || result.Id,
         ...specData,
       }
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data,
-        message: 'Failed to save API specification to MasterData',
-      })
+      await logToMasterData(
+        this.ctx,
+        'saveAPISpec',
+        'masterDataService',
+        'error',
+        error
+      )
       throw new Error('Failed to save API specification')
     }
   }
@@ -201,11 +214,13 @@ export class MasterDataService {
       // Clear all caches since we don't know which group was deleted
       this.clearAllCache()
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data: { id },
-        message: 'Failed to delete API specification from MasterData',
-      })
+      await logToMasterData(
+        this.ctx,
+        'deleteAPISpec',
+        'masterDataService',
+        'error',
+        error
+      )
       throw new Error('Failed to delete API specification')
     }
   }
@@ -215,23 +230,25 @@ export class MasterDataService {
    */
   public async disableAPISpec(id: string): Promise<void> {
     try {
-      await (this.ctx.clients.masterdata as any).updateDocument({
+      await this.ctx.clients.masterdata.updatePartialDocument({
         dataEntity: this.dataEntity,
         id,
         fields: {
           enabled: false,
-          lastUpdated: new Date().toISOString(),
         },
+        schema: this.schema,
       })
 
       // Clear all caches
       this.clearAllCache()
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data: { id },
-        message: 'Failed to disable API specification in MasterData',
-      })
+      await logToMasterData(
+        this.ctx,
+        'disableAPISpec',
+        'masterDataService',
+        'error',
+        error
+      )
       throw new Error('Failed to disable API specification')
     }
   }
@@ -239,16 +256,28 @@ export class MasterDataService {
   /**
    * Find existing specification by group and version
    */
-  private async findExistingSpec(apiGroup: string, version: string): Promise<APISpecDocument | null> {
+  private async findExistingSpec(
+    apiGroup: string,
+    version: string
+  ): Promise<APISpecDocument | null> {
     try {
       const response = await this.ctx.clients.masterdata.searchDocuments({
         dataEntity: this.dataEntity,
-        fields: ['id', 'apiGroup', 'version'],
+        fields: [
+          'id',
+          'apiGroup',
+          'version',
+          'specUrl',
+          'enabled',
+          'description',
+          'operationCount',
+        ],
         where: `apiGroup=${apiGroup} AND version=${version}`,
         pagination: {
           page: 1,
           pageSize: 1,
         },
+        schema: this.schema,
       })
 
       if (response.length === 0) {
@@ -261,19 +290,18 @@ export class MasterDataService {
         version: (response[0] as any).version,
         specUrl: (response[0] as any).specUrl,
         enabled: (response[0] as any).enabled,
-        lastUpdated: (response[0] as any).lastUpdated,
         description: (response[0] as any).description,
-        tags: (response[0] as any).tags,
         operationCount: (response[0] as any).operationCount,
-        uploadedBy: (response[0] as any).uploadedBy,
-        uploadedAt: (response[0] as any).uploadedAt,
       }
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data: { apiGroup, version },
-        message: 'Failed to find existing API specification',
-      })
+      await logToMasterData(
+        this.ctx,
+        'findExistingAPISpec',
+        'masterDataService',
+        'error',
+        error
+      )
+
       return null
     }
   }
@@ -283,17 +311,21 @@ export class MasterDataService {
    */
   private isCacheValid(key: string): boolean {
     const timestamp = this.cacheTimestamps.get(key)
+
     if (!timestamp) {
       return false
     }
-    
+
     return Date.now() - timestamp < this.cacheTTL
   }
 
   /**
    * Set cache entry with timestamp
    */
-  private setCache(key: string, value: APISpecDocument | APISpecDocument[]): void {
+  private setCache(
+    key: string,
+    value: APISpecDocument | APISpecDocument[]
+  ): void {
     this.cache.set(key, value as any)
     this.cacheTimestamps.set(key, Date.now())
   }
@@ -325,24 +357,19 @@ export class MasterDataService {
   }
 
   /**
-   * Fetch OpenAPI specification from URL using IO client with built-in caching
+   * Fetch OpenAPI specification from URL using dedicated OpenAPI client
    */
   public async fetchSpecFromUrl(specUrl: string): Promise<OpenAPISpec> {
     try {
-      const response = await this.ctx.clients.vtexApi.get(specUrl)
-      
-      // Validate that it's a valid OpenAPI spec
-      if (!response.openapi || !response.info || !response.paths) {
-        throw new Error('Invalid OpenAPI specification format')
-      }
-
-      return response as OpenAPISpec
+      return await this.ctx.clients.openApi.fetchSpecFromUrl(specUrl)
     } catch (error) {
-      this.ctx.vtex.logger.error({
-        error,
-        data: { specUrl },
-        message: 'Failed to fetch OpenAPI specification from URL',
-      })
+      await logToMasterData(
+        this.ctx,
+        'fetchSpecFromUrl',
+        'masterDataService',
+        'error',
+        error
+      )
       throw new Error(`Failed to fetch specification from ${specUrl}`)
     }
   }
@@ -352,14 +379,25 @@ export class MasterDataService {
    */
   public countOperations(spec: OpenAPISpec): number {
     let count = 0
+
     for (const pathItem of Object.values(spec.paths)) {
-      const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
+      const methods = [
+        'get',
+        'post',
+        'put',
+        'patch',
+        'delete',
+        'head',
+        'options',
+      ]
+
       for (const method of methods) {
         if (pathItem[method as keyof typeof pathItem]) {
           count++
         }
       }
     }
+
     return count
   }
 }

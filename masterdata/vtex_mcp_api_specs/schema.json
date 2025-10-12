@@ -21,68 +21,26 @@
       "description": "Whether this API group is active and available for use",
       "default": true
     },
-    "lastUpdated": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of last modification"
-    },
     "description": {
       "type": "string",
       "description": "Human-readable description of the API group",
       "maxLength": 500
     },
-    "tags": {
-      "type": "array",
-      "description": "Tags for categorizing the API group",
-      "items": {
-        "type": "string",
-        "maxLength": 50
-      }
-    },
     "operationCount": {
       "type": "integer",
       "description": "Number of operations in this API specification",
       "minimum": 0
-    },
-    "uploadedBy": {
-      "type": "string",
-      "description": "User who uploaded this API specification",
-      "maxLength": 100
-    },
-    "uploadedAt": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When this specification was first uploaded"
     }
   },
-  "required": [
-    "apiGroup",
-    "version",
-    "specUrl",
-    "enabled",
-    "lastUpdated"
-  ],
+  "required": ["apiGroup", "version", "specUrl", "enabled"],
   "v-cache": false,
   "v-default-fields": [
-    "id",
-    "createdIn",
     "apiGroup",
     "version",
     "specUrl",
     "enabled",
-    "lastUpdated",
     "operationCount"
   ],
-  "v-indexed": [
-    "id",
-    "createdIn",
-    "apiGroup",
-    "version",
-    "specUrl",
-    "enabled",
-    "lastUpdated",
-    "uploadedBy",
-    "uploadedAt"
-  ],
+  "v-indexed": ["apiGroup", "version", "specUrl", "enabled"],
   "v-immediate-indexing": true
 }
