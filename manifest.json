@@ -40,6 +40,13 @@
     {
       "name": "outbound-access",
       "attrs": {
+        "host": "infra.io.vtex.com",
+        "path": "*"
+      }
+    },
+    {
+      "name": "outbound-access",
+      "attrs": {
         "host": "fulfillment.vtexcommerce.com.br",
         "path": "/api/*"
       }
@@ -95,11 +102,7 @@
       "name": "ADMIN_DS"
     },
     {
-      "name": "outbound-access",
-      "attrs": {
-        "host": "api.vtex.com",
-        "path": "/api/dataentities/vtex_mcp_api_specs/*"
-      }
+      "name": "sphinx-is-admin"
     }
   ],
   "settingsSchema": {

@@ -22,7 +22,28 @@ All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v0/`
 
 ## Authentication
 
-All endpoints require VTEX IO authentication. The server uses the app's built-in authentication tokens and policies.
+All endpoints require VTEX authentication. The server supports two authentication methods:
+
+### 1. User Authentication (Cookie-based)
+
+- **Header**: `vtexidclientautcookie`
+- **Purpose**: Authenticates store users and admins
+- **User Roles**:
+  - `admin`: Full access to all endpoints
+  - `store-user`: Standard user access
+
+### 2. App Authentication (API Key-based)
+
+- **Headers**: `x-vtex-api-appkey` and `x-vtex-api-apptoken`
+- **Purpose**: Authenticates applications using API keys
+- **Access Level**: Admin-level access
+
+### Authentication Flow
+
+1. **Cookie Authentication**: Validates user session and determines role (admin/store-user)
+2. **API Key Authentication**: Validates app credentials and grants admin access
+3. **Authorization**: At least one authentication method must be valid to proceed
+4. **Error Handling**: Returns 401 Authentication Error if no valid authentication is provided
 
 ## Recent Improvements
 
@@ -879,6 +900,38 @@ The OpenAPI specifications provide the LLM with:
 - Uses relative URLs (paths only) as required by VTEX IO
 - Returns full response objects with headers and data
 
+**OpenAPIClient**
+
+- Fetches and validates OpenAPI specifications from URLs
+- Handles JSON and YAML format parsing
+- Includes URL validation and accessibility checks
+- Leverages VTEX IO HTTP client caching
+
+**ReturnApp Client**
+
+- Handles return app specific functionality
+- Manages return-related operations and data
+
+**VtexId Client**
+
+- Handles VTEX ID authentication operations
+- Validates app keys and tokens via `/api/vtexid/apptoken/login`
+- Retrieves authenticated user information
+- Manages user session validation
+
+**Sphinx Client**
+
+- Provides role-based access control
+- Determines admin privileges for authenticated users
+- Integrates with VTEX ID for authorization
+
+**Authentication Middleware**
+
+- Validates both cookie-based and API key-based authentication
+- Determines user roles (admin/store-user)
+- Sets appropriate auth tokens in context
+- Enforces authentication requirements for all endpoints
+
 **APIExecutor**
 
 - Parses OpenAPI specifications and executes operations
@@ -900,15 +953,19 @@ The OpenAPI specifications provide the LLM with:
 
 ### Data Flow
 
-1. **API Specification Storage**: URLs stored in MasterData v2 (`vtex_mcp_api_specs`)
-2. **Spec Retrieval**: OpenAPI specs fetched from URLs with IO client caching
-3. **Parameter Resolution**: OpenAPI parameters validated and resolved
-4. **API Execution**: VTEXAPIClient executes requests with proper headers
-5. **Response Processing**: Content type and metadata extracted and propagated
-6. **MCP Formatting**: Responses formatted according to MCP specification
+1. **Authentication**: Request validated via cookie or API key authentication
+2. **Authorization**: User role determined (admin/store-user) and appropriate tokens set
+3. **API Specification Storage**: URLs stored in MasterData v2 (`vtex_mcp_api_specs`)
+4. **Spec Retrieval**: OpenAPIClient fetches OpenAPI specs from URLs with IO client caching
+5. **Parameter Resolution**: OpenAPI parameters validated and resolved by APIExecutor
+6. **API Execution**: VTEXAPIClient executes requests with proper headers
+7. **Response Processing**: Content type and metadata extracted and propagated
+8. **MCP Formatting**: Responses formatted according to MCP specification
 
 ### Error Handling
 
+- **Authentication Errors**: 401 errors for invalid or missing authentication
+- **Authorization Errors**: Role-based access control with appropriate error messages
 - **Validation Errors**: Proper parameter validation with descriptive error messages
 - **API Errors**: HTTP errors propagated with original status codes
 - **MCP Errors**: JSON-RPC 2.0 compliant error responses with standard error codes

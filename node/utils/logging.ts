@@ -104,10 +104,10 @@ export const logToMasterData = async (
 
   try {
     // TODO: Implement the production logging and check the type to use the proper log method
-    /* ctx.clients.masterdata.createDocument({
-      dataEntity: 'ES',
+    ctx.clients.masterdata.createDocument({
+      dataEntity: 'MS',
       fields,
-    }) */
+    })
   } catch (err) {
     ctx.vtex.logger.error({
       error: err,

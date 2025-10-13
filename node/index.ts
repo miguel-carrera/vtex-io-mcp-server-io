@@ -20,6 +20,8 @@ import { mcpResourcesRead } from './middlewares/mcpResourcesRead'
 import { mcpHandshake } from './middlewares/mcpHandshake'
 import { mcpInitialize } from './middlewares/mcpInitialize'
 import { mcpInitialized } from './middlewares/mcpInitialized'
+import { auth } from './middlewares/auth'
+import { errorHandler } from './middlewares/errorHandler'
 
 const TIMEOUT_MS = 10 * 1000
 
@@ -55,7 +57,10 @@ declare global {
 
   // The shape of our State object found in `ctx.state`. This is used as state bag to communicate between middlewares.
   interface State extends RecorderState {
-    code: number
+    // Added in the state via graphql directive or auth middleware when request has vtexidclientautcookie
+    userProfile?: any
+    // Added in the state via auth middleware when request has appkey and apptoken.
+    appkey?: string
   }
 }
 
@@ -64,40 +69,40 @@ export default new Service({
   clients,
   routes: {
     getApiDefinitions: method({
-      GET: [initialLoad, getApiDefinitions],
+      GET: [errorHandler, auth, initialLoad, getApiDefinitions],
     }),
     getApiSpec: method({
-      GET: [initialLoad, getApiSpec],
+      GET: [errorHandler, auth, initialLoad, getApiSpec],
     }),
     getApiPathSpec: method({
-      GET: [initialLoad, getApiPathSpec],
+      GET: [errorHandler, auth, initialLoad, getApiPathSpec],
     }),
     executeApi: method({
-      POST: [initialLoad, executeApi],
+      POST: [errorHandler, auth, initialLoad, executeApi],
     }),
     uploadApiSpec: method({
-      POST: [initialLoad, uploadApiSpec],
+      POST: [errorHandler, auth, initialLoad, uploadApiSpec],
     }),
     mcpToolsList: method({
-      POST: [initialLoad, mcpToolsList],
+      POST: [errorHandler, auth, initialLoad, mcpToolsList],
     }),
     mcpToolsCall: method({
-      POST: [initialLoad, mcpToolsCall],
+      POST: [errorHandler, auth, initialLoad, mcpToolsCall],
     }),
     mcpResourcesList: method({
-      POST: [initialLoad, mcpResourcesList],
+      POST: [errorHandler, auth, initialLoad, mcpResourcesList],
     }),
     mcpResourcesRead: method({
-      POST: [initialLoad, mcpResourcesRead],
+      POST: [errorHandler, auth, initialLoad, mcpResourcesRead],
     }),
     mcpHandshake: method({
-      POST: [initialLoad, mcpHandshake],
+      POST: [errorHandler, auth, initialLoad, mcpHandshake],
     }),
     mcpInitialize: method({
-      POST: [initialLoad, mcpInitialize],
+      POST: [errorHandler, auth, initialLoad, mcpInitialize],
     }),
     mcpInitialized: method({
-      POST: [initialLoad, mcpInitialized],
+      POST: [errorHandler, auth, initialLoad, mcpInitialized],
     }),
   },
 })

@@ -13,7 +13,8 @@ export class ReturnApp extends AppClient {
     super('vtex.return-app@3.x', ctx, {
       ...options,
       headers: {
-        VtexIdClientAutCookie: ctx.adminUserAuthToken ?? ctx.authToken,
+        VtexIdClientAutCookie:
+          ctx.adminUserAuthToken ?? ctx.storeUserAuthToken ?? '',
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },

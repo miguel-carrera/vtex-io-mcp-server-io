@@ -24,10 +24,29 @@ This MCP server provides a standardized interface for Large Language Models (LLM
 The server is built on VTEX IO and consists of:
 
 - **HTTP Endpoints**: REST API for MCP client communication
+- **Authentication Layer**: Dual authentication (cookie-based and API key-based)
 - **MasterData Integration**: Stores API specification metadata
 - **Dynamic API Client**: Executes external API calls with caching
 - **OpenAPI Parser**: Validates and processes OpenAPI specifications
 - **Centralized Logging**: Comprehensive logging system
+
+## Authentication
+
+The server supports two authentication methods:
+
+### User Authentication (Cookie-based)
+
+- **Header**: `vtexidclientautcookie`
+- **Purpose**: Authenticates store users and admins
+- **User Roles**:
+  - `admin`: Full access to all endpoints
+  - `store-user`: Standard user access
+
+### App Authentication (API Key-based)
+
+- **Headers**: `x-vtex-api-appkey` and `x-vtex-api-apptoken`
+- **Purpose**: Authenticates applications using API keys
+- **Access Level**: Admin-level access
 
 ## API Endpoints
 

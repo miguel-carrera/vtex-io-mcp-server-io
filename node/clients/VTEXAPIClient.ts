@@ -54,8 +54,6 @@ export class VTEXAPIClient extends JanusClient {
 
     // Prepare headers with authentication and mandatory headers
     const requestHeaders = {
-      Accept: '*/*',
-      'Content-Type': 'application/json',
       ...this.getAuthHeaders(),
       ...headers,
     }
@@ -118,8 +116,8 @@ export class VTEXAPIClient extends JanusClient {
     // Use admin token if available, otherwise use regular auth token
     if (this.context.adminUserAuthToken) {
       headers.VtexIdClientAutCookie = this.context.adminUserAuthToken
-    } else if (this.context.authToken) {
-      headers.VtexIdClientAutCookie = this.context.authToken
+    } else if (this.context.storeUserAuthToken) {
+      headers.VtexIdClientAutCookie = this.context.storeUserAuthToken
     }
 
     // Add account and workspace headers

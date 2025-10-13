@@ -48,7 +48,9 @@ Build an MCP server as VTEX IO HTTP endpoints that:
     {
       "group": "OMS",
       "version": "1.0",
-      "spec": { /* OpenAPI 3.0 spec */ }
+      "spec": {
+        /* OpenAPI 3.0 spec */
+      }
     }
   ],
   "totalApis": 150,
@@ -82,7 +84,9 @@ Build an MCP server as VTEX IO HTTP endpoints that:
   "queryParams": {
     "fields": "orderId,status"
   },
-  "body": { /* for POST/PUT/PATCH */ }
+  "body": {
+    /* for POST/PUT/PATCH */
+  }
 }
 ```
 
@@ -100,7 +104,9 @@ Build an MCP server as VTEX IO HTTP endpoints that:
 ```json
 {
   "success": true,
-  "data": { /* API response */ },
+  "data": {
+    /* API response */
+  },
   "metadata": {
     "executionTime": 234,
     "apiGroup": "OMS",
@@ -119,7 +125,9 @@ Build an MCP server as VTEX IO HTTP endpoints that:
 {
   "apiGroup": "OMS",
   "version": "1.0",
-  "spec": { /* OpenAPI 3.0 spec */ },
+  "spec": {
+    /* OpenAPI 3.0 spec */
+  },
   "enabled": true
 }
 ```
@@ -136,9 +144,15 @@ Build an MCP server as VTEX IO HTTP endpoints that:
 ```
 node/
 ├── clients/
-│   ├── index.ts (add VTEXAPIClient)
-│   └── VTEXAPIClient.ts (new)
+│   ├── index.ts (updated with current clients)
+│   ├── VTEXAPIClient.ts (dynamic HTTP client)
+│   ├── OpenAPIClient.ts (OpenAPI spec fetcher)
+│   ├── ReturnApp.ts (return app client)
+│   └── vtexId.ts (VTEX ID authentication client)
 ├── middlewares/
+│   ├── auth.ts (authentication middleware)
+│   ├── errorHandler.ts (error handling middleware)
+│   ├── initialLoad.ts (initialization middleware)
 │   ├── getApiDefinitions.ts (new)
 │   ├── executeApi.ts (new)
 │   └── uploadApiSpec.ts (new)
@@ -154,6 +168,21 @@ node/
 ```
 
 ## Key Implementation Details
+
+### Authentication Layer
+
+- **VtexId Client**: Handles VTEX ID authentication operations
+  - Validates app keys and tokens via `/api/vtexid/apptoken/login`
+  - Retrieves authenticated user information
+  - Manages user session validation
+- **Sphinx Client**: Provides role-based access control
+  - Determines admin privileges for authenticated users
+  - Integrates with VTEX ID for authorization
+- **Auth Middleware**: Validates authentication for all endpoints
+  - Supports cookie-based user authentication
+  - Supports API key-based app authentication
+  - Determines user roles (admin/store-user)
+  - Sets appropriate auth tokens in context
 
 ### VTEXAPIClient
 
@@ -228,4 +257,3 @@ node/
 - Request/response transformation rules
 - API usage analytics
 - Rate limiting per API group
-
