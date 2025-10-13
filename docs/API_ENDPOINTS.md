@@ -48,6 +48,7 @@ All endpoints require VTEX IO authentication. The server uses the app's built-in
 ### API Execution Improvements
 
 - **Relative URLs**: VTEXAPIClient now uses relative URLs (paths only) as required by VTEX IO
+- **Enhanced Error Handling**: HTTP status codes and error messages are now properly mapped to MCP error responses using consistent JSON-RPC 2.0 error codes
 - **Promise Handling**: Proper promise return patterns for HTTP client methods
 - **Response Metadata**: Enhanced metadata including execution time, content type, and response headers
 
@@ -671,6 +672,26 @@ The following endpoints implement the Model Context Protocol (MCP) specification
   "params": {
     "name": "vtex_api_call",
     "arguments": {
+      "apiGroup": "Orders",
+      "operationId": "GetOrder",
+      "parameters": {
+        "orderId": "1172452900788-01"
+      }
+    }
+  }
+}
+```
+
+**Alternative Example with Query Parameters:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "vtex_api_call",
+    "arguments": {
       "apiGroup": "OMS",
       "operationId": "getOrders",
       "parameters": {
@@ -700,6 +721,41 @@ The following endpoints implement the Model Context Protocol (MCP) specification
   }
 }
 ```
+
+**Error Response Example (404 Not Found):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "error": {
+    "code": -32602,
+    "message": "Order not found",
+    "data": {
+      "httpStatusCode": 404,
+      "originalError": {
+        /* original error details */
+      }
+    }
+  }
+}
+```
+
+**Notes:**
+
+- This endpoint executes the specified tool with the provided arguments
+- The `vtex_api_call` tool allows dynamic execution of any VTEX API
+- **Parameter Categorization**: Parameters are automatically categorized based on the OpenAPI specification:
+  - `path` parameters (like `orderId` in `/api/oms/pvt/orders/{orderId}`) are used in the URL path
+  - `query` parameters are added to the URL query string
+  - `header` parameters are added to the request headers
+- **Error Handling**: HTTP status codes and error messages are properly mapped to MCP error responses:
+  - 404 errors return `"code": -32602` (Invalid params) with the actual error message
+  - 400 errors return `"code": -32602` (Invalid params)
+  - 401/403 errors return `"code": -32600` (Invalid Request)
+  - 500+ errors return `"code": -32603` (Internal error)
+  - All errors maintain MCP protocol consistency using JSON-RPC 2.0 error codes
+- The response includes the API result with proper content type
 
 ### 11. MCP Resources/List
 

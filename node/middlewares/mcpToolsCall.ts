@@ -10,6 +10,8 @@ import { MasterDataService } from '../services/masterDataService'
 import { APIExecutor } from '../utils/apiExecutor'
 import { logToMasterData } from '../utils/logging'
 import { getValidMethodsForEndpoint } from '../utils/mcpUtils'
+import { categorizeParameters } from '../utils/parameterCategorizer'
+import { mapHttpErrorToMCP } from '../utils/errorMapper'
 
 /**
  * MCP Tools/Call endpoint
@@ -128,11 +130,20 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
       specMetadata.specUrl
     )
 
+    // Categorize parameters based on OpenAPI specification
+    const categorizedParams = categorizeParameters(
+      openApiSpec,
+      operationId,
+      parameters
+    )
+
     // Execute the API call
     const result = await apiExecutor.executeOperation(openApiSpec, {
       apiGroup,
       operationId,
-      queryParams: parameters,
+      pathParams: categorizedParams.pathParams,
+      queryParams: categorizedParams.queryParams,
+      headers: categorizedParams.headers,
       body,
     })
 
@@ -170,18 +181,26 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
 
     return next()
   } catch (error) {
+    // Map HTTP error to MCP error format
+    const mcpError = mapHttpErrorToMCP(error)
+
     await logToMasterData(ctx, 'mcpToolsCall', 'middleware', 'error', {
       error,
+      mcpError,
       message: 'Failed to execute MCP tool call',
     })
 
-    ctx.status = 500
+    // Use the HTTP status code from the error, or default to 500
+    const httpStatusCode = mcpError.data?.httpStatusCode || 500
+    ctx.status = httpStatusCode
+
     ctx.body = {
       jsonrpc: '2.0',
       id: requestBody?.id as string | null,
       error: {
-        code: -32603,
-        message: 'Internal error',
+        code: mcpError.code,
+        message: mcpError.message,
+        data: mcpError.data,
       },
     }
   }
