@@ -18,7 +18,7 @@ The MCP server provides two sets of endpoints:
 
 ## Base URL
 
-All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v0/`
+All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v1/`
 
 ## Authentication
 
@@ -77,7 +77,7 @@ All endpoints require VTEX authentication. The server supports two authenticatio
 
 ### 1. Get API Definitions
 
-**Endpoint:** `GET /_v/mcp_server/v0/api-definitions`
+**Endpoint:** `GET /_v/mcp_server/v1/api-definitions`
 
 **Purpose:** Discover available API groups and their metadata (for detailed specs, use the individual API spec endpoint)
 
@@ -116,17 +116,17 @@ All endpoints require VTEX authentication. The server supports two authenticatio
 
 ```bash
 # Get all API definitions
-curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions" \
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Get specific API group
-curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group=OMS" \
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions?group=OMS" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 2. Get Single API Specification
 
-**Endpoint:** `GET /_v/mcp_server/v0/api-spec/{group}`
+**Endpoint:** `GET /_v/mcp_server/v1/api-spec/{group}`
 
 **Purpose:** Retrieve a specific API group's complete OpenAPI specification
 
@@ -206,13 +206,13 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions?group
 
 ```bash
 # Get specific API group specification
-curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS" \
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-spec/OMS" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 3. Get API Path Specification
 
-**Endpoint:** `GET /_v/mcp_server/v0/api-spec/{group}/{path}`
+**Endpoint:** `GET /_v/mcp_server/v1/api-spec/{group}/{path}`
 
 **Purpose:** Retrieve a specific API path's OpenAPI specification for granular access
 
@@ -281,7 +281,7 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS" \
 
 ```bash
 # Get specific API path specification
-curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS/api%2Foms%2Fpvt%2Forders" \
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-spec/OMS/api%2Foms%2Fpvt%2Forders" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Note: The path parameter should be URL encoded
@@ -290,7 +290,7 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS/api%2Fom
 
 ### 4. Execute API
 
-**Endpoint:** `POST /_v/mcp_server/v0/execute-api`
+**Endpoint:** `POST /_v/mcp_server/v1/execute-api`
 
 **Purpose:** Dynamically execute any VTEX API call based on OpenAPI specifications
 
@@ -349,7 +349,7 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-spec/OMS/api%2Fom
 **Example Usage:**
 
 ```bash
-curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v1/execute-api" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -364,7 +364,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 
 ### 5. Upload API Specification (Admin Only)
 
-**Endpoint:** `POST /_v/mcp_server/v0/admin/upload-spec`
+**Endpoint:** `POST /_v/mcp_server/v1/admin/upload-spec`
 
 **Purpose:** Upload or update OpenAPI specification URLs to MasterData
 
@@ -396,7 +396,7 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
 **Example Usage:**
 
 ```bash
-curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v1/admin/upload-spec" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ADMIN_TOKEN" \
   -d '{
@@ -471,7 +471,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 6. MCP Handshake
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/handshake`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/handshake`
 
 **Purpose:** Used at the very beginning of the connection to verify that:
 
@@ -537,7 +537,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 7. MCP Initialize
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/initialize`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/initialize`
 
 **Purpose:** Initialize MCP connection and negotiate capabilities between client and server
 
@@ -596,7 +596,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 8. MCP Initialized Notification
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/notifications/initialized`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/notifications/initialized`
 
 **Purpose:** Notification sent by the client after successful initialization
 
@@ -620,7 +620,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 9. MCP Tools/List
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/list`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/tools/list`
 
 **Purpose:** List available tools for AI assistant integration
 
@@ -679,7 +679,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 10. MCP Tools/Call
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/call`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/tools/call`
 
 **Purpose:** Execute a tool via MCP protocol
 
@@ -780,7 +780,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 11. MCP Resources/List
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/list`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/resources/list`
 
 **Purpose:** List available resources (API specifications)
 
@@ -822,7 +822,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 ### 12. MCP Resources/Read
 
-**Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/read`
+**Endpoint:** `POST /_v/mcp_server/v1/mcp/resources/read`
 
 **Purpose:** Read a specific resource (API specification)
 

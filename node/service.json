@@ -7,51 +7,51 @@
   "workers": 1,
   "routes": {
     "getApiDefinitions": {
-      "path": "/_v/mcp_server/v0/api-definitions",
+      "path": "/_v/mcp_server/v1/api-definitions",
       "public": true
     },
     "getApiSpec": {
-      "path": "/_v/mcp_server/v0/api-spec/:group",
+      "path": "/_v/mcp_server/v1/api-spec/:group",
       "public": true
     },
     "getApiPathSpec": {
-      "path": "/_v/mcp_server/v0/api-spec/:group/:path*",
+      "path": "/_v/mcp_server/v1/api-spec/:group/:path*",
       "public": true
     },
     "executeApi": {
-      "path": "/_v/mcp_server/v0/execute-api",
+      "path": "/_v/mcp_server/v1/execute-api",
       "public": true
     },
     "uploadApiSpec": {
-      "path": "/_v/mcp_server/v0/admin/upload-spec",
+      "path": "/_v/mcp_server/v1/admin/upload-spec",
       "public": false
     },
     "mcpToolsList": {
-      "path": "/_v/mcp_server/v0/mcp/tools/list",
+      "path": "/_v/mcp_server/v1/mcp/tools/list",
       "public": true
     },
     "mcpToolsCall": {
-      "path": "/_v/mcp_server/v0/mcp/tools/call",
+      "path": "/_v/mcp_server/v1/mcp/tools/call",
       "public": true
     },
     "mcpResourcesList": {
-      "path": "/_v/mcp_server/v0/mcp/resources/list",
+      "path": "/_v/mcp_server/v1/mcp/resources/list",
       "public": true
     },
     "mcpResourcesRead": {
-      "path": "/_v/mcp_server/v0/mcp/resources/read",
+      "path": "/_v/mcp_server/v1/mcp/resources/read",
       "public": true
     },
     "mcpHandshake": {
-      "path": "/_v/mcp_server/v0/mcp/handshake",
+      "path": "/_v/mcp_server/v1/mcp/handshake",
       "public": true
     },
     "mcpInitialize": {
-      "path": "/_v/mcp_server/v0/mcp/initialize",
+      "path": "/_v/mcp_server/v1/mcp/initialize",
       "public": true
     },
     "mcpInitialized": {
-      "path": "/_v/mcp_server/v0/mcp/notifications/initialized",
+      "path": "/_v/mcp_server/v1/mcp/notifications/initialized",
       "public": true
     }
   },

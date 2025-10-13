@@ -53,7 +53,7 @@ The server supports two authentication methods:
 ### 1. Get API Definitions
 
 ```
-GET /_v/mcp_server/v0/api-definitions
+GET /_v/mcp_server/v1/api-definitions
 ```
 
 Retrieve all available API definitions for LLM consumption.
@@ -65,7 +65,7 @@ Retrieve all available API definitions for LLM consumption.
 ### 2. Execute API
 
 ```
-POST /_v/mcp_server/v0/execute-api
+POST /_v/mcp_server/v1/execute-api
 ```
 
 Dynamically execute any VTEX API call based on OpenAPI specifications.
@@ -86,7 +86,7 @@ Dynamically execute any VTEX API call based on OpenAPI specifications.
 ### 3. Upload API Specification (Admin)
 
 ```
-POST /_v/mcp_server/v0/admin/upload-spec
+POST /_v/mcp_server/v1/admin/upload-spec
 ```
 
 Upload or update OpenAPI specification URLs to MasterData.
@@ -166,7 +166,7 @@ The server automatically creates the required MasterData schema (`vtex_mcp_api_s
 ### 1. Upload an API Specification
 
 ```bash
-curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v1/admin/upload-spec" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -182,14 +182,14 @@ curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/admin/upload-spec" \
 ### 2. Get API Definitions
 
 ```bash
-curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v0/api-definitions" \
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 3. Execute an API Call
 
 ```bash
-curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v0/execute-api" \
+curl -X POST "https://myaccount.myvtex.com/_v/mcp_server/v1/execute-api" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
