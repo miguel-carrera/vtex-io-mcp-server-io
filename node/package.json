@@ -2,16 +2,13 @@
   "dependencies": {
     "@vtex/api": "^7.0.0",
     "@vtex/clients": "^2.21.0",
-    "co-body": "^6.0.0",
-    "ramda": "^0.25.0"
+    "co-body": "^6.0.0"
   },
   "devDependencies": {
     "@types/co-body": "^0.0.3",
     "@types/jest": "^24.0.18",
     "@types/node": "^20.0.0",
     "@vtex/prettier-config": "^0.3.6",
-    "@types/ramda": "types/npm-ramda#dist",
-    "@vtex/api": "^7.0.0",
     "@vtex/test-tools": "^1.0.0",
     "@vtex/tsconfig": "^0.5.6",
     "typescript": "5.5.3"
