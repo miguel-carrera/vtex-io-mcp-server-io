@@ -62,8 +62,9 @@ function extractErrorMessage(error: any, statusCode: number): string {
   if (error?.error) return error.error
   if (error?.response?.data?.message) return error.response.data.message
   if (error?.response?.data?.error) return error.response.data.error
-  if (error?.response?.data?.errorMessage)
+  if (error?.response?.data?.errorMessage) {
     return error.response.data.errorMessage
+  }
 
   // Try to extract from response body
   if (error?.response?.data) {

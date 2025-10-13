@@ -73,7 +73,14 @@ export interface OpenAPIParameter {
   required?: boolean
   deprecated?: boolean
   allowEmptyValue?: boolean
-  style?: 'matrix' | 'label' | 'form' | 'simple' | 'spaceDelimited' | 'pipeDelimited' | 'deepObject'
+  style?:
+    | 'matrix'
+    | 'label'
+    | 'form'
+    | 'simple'
+    | 'spaceDelimited'
+    | 'pipeDelimited'
+    | 'deepObject'
   explode?: boolean
   allowReserved?: boolean
   schema?: OpenAPISchema | OpenAPIReference
