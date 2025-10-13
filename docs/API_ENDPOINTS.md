@@ -14,7 +14,7 @@ The MCP server provides two sets of endpoints:
 4. Execute any VTEX API call dynamically based on stored specifications
 5. Upload and manage API specifications (admin only)
 
-**MCP Protocol Endpoints (4 endpoints):** 6. List available tools for AI assistant integration 7. Execute tools via MCP protocol 8. List available resources (API specifications) 9. Read specific resources (API specifications)
+**MCP Protocol Endpoints (7 endpoints):** 6. MCP handshake for connection verification 7. Initialize MCP connection and negotiate capabilities 8. Handle MCP initialization notification 9. List available tools for AI assistant integration 10. Execute tools via MCP protocol 11. List available resources (API specifications) 12. Read specific resources (API specifications)
 
 ## Base URL
 
@@ -445,7 +445,158 @@ The server respects VTEX IO's built-in rate limiting mechanisms. Consider implem
 
 The following endpoints implement the Model Context Protocol (MCP) specification for AI assistant integration:
 
-### 6. MCP Tools/List
+**Method Flexibility**: All MCP endpoints accept both standard method names (e.g., `"method": "initialize"`) and prefixed method names (e.g., `"method": "mcp/initialize"`) for maximum compatibility.
+
+### 6. MCP Handshake
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/handshake`
+
+**Purpose:** Used at the very beginning of the connection to verify that:
+
+- Both sides speak MCP
+- The protocol versions are compatible
+- Capabilities can be safely negotiated
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "handshake",
+  "params": {
+    "version": "1.0.0",
+    "capabilities": ["resources", "tools"]
+  }
+}
+```
+
+**Alternative Method Format:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "mcp/handshake",
+  "params": {
+    "version": "1.0.0",
+    "capabilities": ["resources", "tools"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "version": "1.0.0",
+    "capabilities": ["resources", "tools", "logging"],
+    "compatible": true,
+    "serverInfo": {
+      "name": "VTEX IO MCP Server",
+      "version": "1.0.0",
+      "description": "Model Context Protocol server for VTEX IO API integration"
+    }
+  }
+}
+```
+
+**Notes:**
+
+- This is a lightweight connection verification endpoint
+- Can be called before the full `initialize` process
+- Returns `compatible: true/false` to indicate version compatibility
+- Lists available server capabilities
+- Think of it as: "Hello, are you an MCP server? What can you do?"
+- **Method Flexibility**: Accepts both `"method": "handshake"` and `"method": "mcp/handshake"`
+
+### 7. MCP Initialize
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/initialize`
+
+**Purpose:** Initialize MCP connection and negotiate capabilities between client and server
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {},
+      "resources": {}
+    },
+    "clientInfo": {
+      "name": "MCP Client",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {
+        "listChanged": true
+      },
+      "resources": {
+        "subscribe": false,
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "VTEX IO MCP Server",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+**Notes:**
+
+- This is the first endpoint that must be called to establish an MCP connection
+- The client must send this request before using any other MCP endpoints
+- Protocol version must match exactly: `2024-11-05`
+- After receiving this response, the client should send a `notifications/initialized` notification
+
+### 8. MCP Initialized Notification
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/notifications/initialized`
+
+**Purpose:** Notification sent by the client after successful initialization
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/initialized",
+  "params": {}
+}
+```
+
+**Response:** No response body (HTTP 200 status)
+
+**Notes:**
+
+- This is a notification (no `id` field required)
+- Must be sent after receiving a successful `initialize` response
+- After this notification, the client can use all other MCP endpoints
+
+### 9. MCP Tools/List
 
 **Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/list`
 
@@ -504,7 +655,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 }
 ```
 
-### 7. MCP Tools/Call
+### 10. MCP Tools/Call
 
 **Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/call`
 
@@ -550,7 +701,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 }
 ```
 
-### 8. MCP Resources/List
+### 11. MCP Resources/List
 
 **Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/list`
 
@@ -592,7 +743,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 }
 ```
 
-### 9. MCP Resources/Read
+### 12. MCP Resources/Read
 
 **Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/read`
 

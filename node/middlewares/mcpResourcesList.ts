@@ -7,6 +7,7 @@ import type {
 } from '../types/mcp-protocol'
 import { MasterDataService } from '../services/masterDataService'
 import { logToMasterData } from '../utils/logging'
+import { getValidMethodsForEndpoint } from '../utils/mcpUtils'
 
 /**
  * MCP Resources/List endpoint
@@ -38,8 +39,10 @@ export async function mcpResourcesList(
       return
     }
 
-    // Validate method
-    if (requestBody.method !== 'resources/list') {
+    // Validate method - accept both 'resources/list' and 'mcp/resources/list'
+    const validMethods = getValidMethodsForEndpoint('resources/list')
+
+    if (!validMethods.includes(requestBody.method)) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',

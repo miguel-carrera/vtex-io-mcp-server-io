@@ -22,11 +22,19 @@ export interface MCPError {
 
 // MCP Standard Methods
 export type MCPMethod =
+  | 'mcp/handshake'
+  | 'mcp/initialize'
+  | 'mcp/tools/list'
+  | 'mcp/tools/call'
+  | 'mcp/resources/list'
+  | 'mcp/resources/read'
+  | 'mcp/notifications/initialized'
+  | 'handshake'
+  | 'initialize'
   | 'tools/list'
   | 'tools/call'
   | 'resources/list'
   | 'resources/read'
-  | 'initialize'
   | 'notifications/initialized'
 
 // Tool Definition
@@ -88,6 +96,24 @@ export interface MCPResourcesReadResponse {
     text?: string
     blob?: string
   }>
+}
+
+// Handshake Request
+export interface MCPHandshakeRequest {
+  version?: string
+  capabilities?: string[]
+}
+
+// Handshake Response
+export interface MCPHandshakeResponse {
+  version: string
+  capabilities: string[]
+  compatible: boolean
+  serverInfo: {
+    name: string
+    version: string
+    description?: string
+  }
 }
 
 // Initialize Request

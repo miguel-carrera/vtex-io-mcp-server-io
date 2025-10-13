@@ -9,6 +9,7 @@ import type {
 import { MasterDataService } from '../services/masterDataService'
 import { APIExecutor } from '../utils/apiExecutor'
 import { logToMasterData } from '../utils/logging'
+import { getValidMethodsForEndpoint } from '../utils/mcpUtils'
 
 /**
  * MCP Tools/Call endpoint
@@ -37,8 +38,10 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
       return
     }
 
-    // Validate method
-    if (requestBody.method !== 'tools/call') {
+    // Validate method - accept both 'tools/call' and 'mcp/tools/call'
+    const validMethods = getValidMethodsForEndpoint('tools/call')
+
+    if (!validMethods.includes(requestBody.method)) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',

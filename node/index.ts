@@ -17,6 +17,9 @@ import { mcpToolsList } from './middlewares/mcpToolsList'
 import { mcpToolsCall } from './middlewares/mcpToolsCall'
 import { mcpResourcesList } from './middlewares/mcpResourcesList'
 import { mcpResourcesRead } from './middlewares/mcpResourcesRead'
+import { mcpHandshake } from './middlewares/mcpHandshake'
+import { mcpInitialize } from './middlewares/mcpInitialize'
+import { mcpInitialized } from './middlewares/mcpInitialized'
 
 const TIMEOUT_MS = 10 * 1000
 
@@ -86,6 +89,15 @@ export default new Service({
     }),
     mcpResourcesRead: method({
       POST: [initialLoad, mcpResourcesRead],
+    }),
+    mcpHandshake: method({
+      POST: [initialLoad, mcpHandshake],
+    }),
+    mcpInitialize: method({
+      POST: [initialLoad, mcpInitialize],
+    }),
+    mcpInitialized: method({
+      POST: [initialLoad, mcpInitialized],
     }),
   },
 })

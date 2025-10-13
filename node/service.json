@@ -41,6 +41,18 @@
     "mcpResourcesRead": {
       "path": "/_v/mcp_server/v0/mcp/resources/read",
       "public": true
+    },
+    "mcpHandshake": {
+      "path": "/_v/mcp_server/v0/mcp/handshake",
+      "public": true
+    },
+    "mcpInitialize": {
+      "path": "/_v/mcp_server/v0/mcp/initialize",
+      "public": true
+    },
+    "mcpInitialized": {
+      "path": "/_v/mcp_server/v0/mcp/notifications/initialized",
+      "public": true
     }
   },
   "events": {}
