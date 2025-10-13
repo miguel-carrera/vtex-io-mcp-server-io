@@ -4,13 +4,17 @@ This document describes the available API endpoints for the MCP (Model Context P
 
 ## Overview
 
-The MCP server provides five main endpoints that allow LLMs to:
+The MCP server provides two sets of endpoints:
+
+**REST API Endpoints (5 endpoints):**
 
 1. Discover available VTEX API endpoints through OpenAPI specifications
 2. Retrieve individual API group specifications in detail
 3. Retrieve specific API path specifications for granular access
 4. Execute any VTEX API call dynamically based on stored specifications
 5. Upload and manage API specifications (admin only)
+
+**MCP Protocol Endpoints (4 endpoints):** 6. List available tools for AI assistant integration 7. Execute tools via MCP protocol 8. List available resources (API specifications) 9. Read specific resources (API specifications)
 
 ## Base URL
 
@@ -19,6 +23,33 @@ All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v0/`
 ## Authentication
 
 All endpoints require VTEX IO authentication. The server uses the app's built-in authentication tokens and policies.
+
+## Recent Improvements
+
+### Content Type Handling
+
+- **Automatic Content-Type Detection**: API responses now properly capture and propagate `Content-Type` headers
+- **MCP Response Format**: MCP tools/call responses include `mimeType` field indicating the original response format
+- **Flexible Header Support**: Handles both `content-type` and `Content-Type` header formats
+
+### Header Management
+
+- **Mandatory Headers**: Automatically adds `Accept: */*` and `Content-Type: application/json` to all API requests
+- **Smart Validation**: Skips validation for mandatory headers that are automatically handled by the system
+- **Header Priority**: Custom headers can override defaults when needed
+
+### MCP Protocol Compliance
+
+- **JSON-RPC 2.0**: Full compliance with JSON-RPC 2.0 specification
+- **Standard Methods**: Implements all standard MCP methods (`tools/list`, `tools/call`, `resources/list`, `resources/read`)
+- **Error Handling**: Proper MCP error codes and message formatting
+- **Content Types**: Correct `type: 'text'` with `mimeType` for structured data responses
+
+### API Execution Improvements
+
+- **Relative URLs**: VTEXAPIClient now uses relative URLs (paths only) as required by VTEX IO
+- **Promise Handling**: Proper promise return patterns for HTTP client methods
+- **Response Metadata**: Enhanced metadata including execution time, content type, and response headers
 
 ## Endpoints
 
@@ -410,13 +441,217 @@ The server respects VTEX IO's built-in rate limiting mechanisms. Consider implem
 6. All API calls are logged for audit purposes
 7. External URL access is controlled by VTEX IO's outbound access policies
 
+## MCP Protocol Endpoints
+
+The following endpoints implement the Model Context Protocol (MCP) specification for AI assistant integration:
+
+### 6. MCP Tools/List
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/list`
+
+**Purpose:** List available tools for AI assistant integration
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {}
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "vtex_api_call",
+        "description": "Execute any VTEX API call dynamically",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "apiGroup": {
+              "type": "string",
+              "description": "The API group (e.g., OMS, Catalog)",
+              "enum": ["OMS", "Catalog"]
+            },
+            "operationId": {
+              "type": "string",
+              "description": "The operation ID to execute"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Parameters for the API call",
+              "additionalProperties": true
+            },
+            "body": {
+              "type": "object",
+              "description": "Request body for POST/PUT/PATCH operations",
+              "additionalProperties": true
+            }
+          },
+          "required": ["apiGroup", "operationId"]
+        }
+      }
+    ]
+  }
+}
+```
+
+### 7. MCP Tools/Call
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/tools/call`
+
+**Purpose:** Execute a tool via MCP protocol
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "vtex_api_call",
+    "arguments": {
+      "apiGroup": "OMS",
+      "operationId": "getOrders",
+      "parameters": {
+        "page": 1,
+        "per_page": 10
+      }
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"success\": true,\n  \"data\": { /* API response */ }\n}",
+        "mimeType": "application/json"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+### 8. MCP Resources/List
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/list`
+
+**Purpose:** List available resources (API specifications)
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "resources/list",
+  "params": {}
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "resources": [
+      {
+        "uri": "vtex://api-spec/OMS",
+        "name": "OMS API Specification",
+        "description": "OpenAPI specification for OMS API",
+        "mimeType": "application/json"
+      },
+      {
+        "uri": "vtex://api-path/OMS/api/oms/pvt/orders",
+        "name": "OMS /api/oms/pvt/orders API Path",
+        "description": "API path specification for /api/oms/pvt/orders in OMS",
+        "mimeType": "application/json"
+      }
+    ]
+  }
+}
+```
+
+### 9. MCP Resources/Read
+
+**Endpoint:** `POST /_v/mcp_server/v0/mcp/resources/read`
+
+**Purpose:** Read a specific resource (API specification)
+
+**Request Body:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "resources/read",
+  "params": {
+    "uri": "vtex://api-spec/OMS"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "contents": [
+      {
+        "uri": "vtex://api-spec/OMS",
+        "mimeType": "application/json",
+        "text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": { /* OpenAPI spec */ }\n}"
+      }
+    ]
+  }
+}
+```
+
 ## Integration with LLMs
 
 This MCP server is designed to work with LLMs that support the Model Context Protocol:
 
+**REST API Integration:**
+
 1. **Discovery**: LLM calls `getApiDefinitions` to understand available APIs
 2. **Execution**: LLM calls `executeApi` with specific parameters to perform actions
 3. **Management**: Admins can upload new API specification URLs via `uploadApiSpec`
+
+**MCP Protocol Integration:**
+
+1. **Tool Discovery**: LLM calls `tools/list` to discover available tools
+2. **Tool Execution**: LLM calls `tools/call` to execute specific operations with proper content type handling
+3. **Resource Discovery**: LLM calls `resources/list` to find available API specifications
+4. **Resource Reading**: LLM calls `resources/read` to get detailed API specifications
+
+**Enhanced Capabilities:**
+
+- **Content Type Awareness**: MCP responses include `mimeType` field for proper content interpretation
+- **Automatic Headers**: All API calls include mandatory headers (`Accept`, `Content-Type`)
+- **Response Metadata**: Full response metadata including execution time and headers
+- **Error Handling**: Comprehensive error handling with proper MCP error codes
 
 The OpenAPI specifications provide the LLM with:
 
@@ -424,3 +659,50 @@ The OpenAPI specifications provide the LLM with:
 - Required and optional parameters
 - Expected request/response formats
 - Authentication requirements
+- Content type information for proper response parsing
+
+## Technical Architecture
+
+### Component Overview
+
+**VTEXAPIClient**
+
+- Handles HTTP communication with VTEX APIs
+- Automatically adds mandatory headers (`Accept: */*`, `Content-Type: application/json`)
+- Uses relative URLs (paths only) as required by VTEX IO
+- Returns full response objects with headers and data
+
+**APIExecutor**
+
+- Parses OpenAPI specifications and executes operations
+- Validates required parameters from OpenAPI specs
+- Skips validation for mandatory headers (handled by VTEXAPIClient)
+- Returns enhanced metadata including content type and execution time
+
+**MasterDataService**
+
+- Manages API specification metadata in MasterData v2
+- Fetches OpenAPI specs from URLs with caching
+- Handles CRUD operations for API specifications
+
+**MCP Protocol Handlers**
+
+- Implement JSON-RPC 2.0 specification
+- Provide tools and resources for AI assistant integration
+- Handle proper content type propagation in responses
+
+### Data Flow
+
+1. **API Specification Storage**: URLs stored in MasterData v2 (`vtex_mcp_api_specs`)
+2. **Spec Retrieval**: OpenAPI specs fetched from URLs with IO client caching
+3. **Parameter Resolution**: OpenAPI parameters validated and resolved
+4. **API Execution**: VTEXAPIClient executes requests with proper headers
+5. **Response Processing**: Content type and metadata extracted and propagated
+6. **MCP Formatting**: Responses formatted according to MCP specification
+
+### Error Handling
+
+- **Validation Errors**: Proper parameter validation with descriptive error messages
+- **API Errors**: HTTP errors propagated with original status codes
+- **MCP Errors**: JSON-RPC 2.0 compliant error responses with standard error codes
+- **Logging**: Centralized logging to MasterData for monitoring and debugging

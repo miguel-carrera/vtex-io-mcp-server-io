@@ -19,7 +19,10 @@ export interface APIRequestConfig {
 export class VTEXAPIClient extends JanusClient {
   private customBaseURL?: string
 
-  constructor(ctx: IOContext, options?: InstanceOptions & VTEXAPIClientOptions) {
+  constructor(
+    ctx: IOContext,
+    options?: InstanceOptions & VTEXAPIClientOptions
+  ) {
     super(ctx, {
       ...options,
       headers: {
@@ -49,8 +52,10 @@ export class VTEXAPIClient extends JanusClient {
     const baseURL = this.customBaseURL || this.getBaseURL()
     const url = this.buildURL(baseURL, path)
 
-    // Prepare headers with authentication
+    // Prepare headers with authentication and mandatory headers
     const requestHeaders = {
+      Accept: '*/*',
+      'Content-Type': 'application/json',
       ...this.getAuthHeaders(),
       ...headers,
     }
@@ -73,51 +78,34 @@ export class VTEXAPIClient extends JanusClient {
       requestOptions.data = body
     }
 
-    try {
-      // Use the appropriate HTTP method based on the request method
-      let response: any
-      switch (method) {
-        case 'GET':
-          response = await this.http.get(url, requestOptions)
-          break
-        case 'POST':
-          response = await this.http.post(url, requestOptions.data, requestOptions)
-          break
-        case 'PUT':
-          response = await this.http.put(url, requestOptions.data, requestOptions)
-          break
-        case 'PATCH':
-          response = await this.http.patch(url, requestOptions.data, requestOptions)
-          break
-        case 'DELETE':
-          response = await this.http.delete(url, requestOptions)
-          break
-        case 'HEAD':
-          response = await this.http.head(url, requestOptions)
-          break
-        case 'OPTIONS':
-          // OPTIONS method not available in VTEX HttpClient, use GET as fallback
-          response = await this.http.get(url, requestOptions)
-          break
-        default:
-          throw new Error(`Unsupported HTTP method: ${method}`)
-      }
-      return response.data
-    } catch (error) {
-      // Log the error for debugging
-      this.context.logger.error({
-        error,
-        data: {
-          method,
-          url,
-          headers: requestHeaders,
-          query,
-          body,
-        },
-        message: `VTEX API request failed: ${method} ${url}`,
-      })
+    // Use the appropriate HTTP method based on the request method
+    switch (method) {
+      case 'GET':
+        return this.http.get(url, requestOptions)
 
-      throw error
+      case 'POST':
+        return this.http.post(url, requestOptions.data, requestOptions)
+
+      case 'PUT':
+        return this.http.put(url, requestOptions.data, requestOptions)
+
+      case 'PATCH':
+        return this.http.patch(url, requestOptions.data, requestOptions)
+
+      case 'DELETE':
+        // Force return type to 'any' to avoid type error with IOResponse<void>
+        return this.http.delete(url, requestOptions) as any
+
+      case 'HEAD':
+        // Force return type to 'any' to avoid type error with IOResponse<void>
+        return this.http.head(url, requestOptions) as any
+
+      case 'OPTIONS':
+        // OPTIONS method not available in VTEX HttpClient, use GET as fallback
+        return this.http.get(url, requestOptions)
+
+      default:
+        throw new Error(`Unsupported HTTP method: ${method}`)
     }
   }
 
@@ -152,14 +140,13 @@ export class VTEXAPIClient extends JanusClient {
   /**
    * Build the complete URL from base URL and path
    */
-  private buildURL(baseURL: string, path: string): string {
+  private buildURL(_baseURL: string, path: string): string {
     // Ensure path starts with /
     const normalizedPath = path.startsWith('/') ? path : `/${path}`
-    
-    // Remove trailing slash from baseURL
-    const cleanBaseURL = baseURL.replace(/\/$/, '')
-    
-    return `${cleanBaseURL}${normalizedPath}`
+
+    // For VTEX IO, we need to return only the path (relative URL)
+    // The baseURL is used for configuration but not in the actual HTTP request
+    return normalizedPath
   }
 
   /**

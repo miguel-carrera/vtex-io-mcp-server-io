@@ -1,4 +1,6 @@
-import type { MCPExecuteApiResponse } from '../types/mcp'
+import { json } from 'co-body'
+
+import type { MCPExecuteApiRequest, MCPExecuteApiResponse } from '../types/mcp'
 import { MasterDataService } from '../services/masterDataService'
 import { APIExecutor } from '../utils/apiExecutor'
 import { RequestValidator } from '../utils/validator'
@@ -9,11 +11,15 @@ import { logToMasterData } from '../utils/logging'
  * POST /_v/mcp_server/v0/execute-api
  */
 export async function executeApi(ctx: Context, next: () => Promise<any>) {
+  let requestBody: MCPExecuteApiRequest | null = null
+
   try {
+    const { req } = ctx
+
+    requestBody = (await json(req)) as MCPExecuteApiRequest | null
+
     // Validate request body
-    const request = RequestValidator.validateExecuteApiRequest(
-      (ctx.request as any).body
-    )
+    const request = RequestValidator.validateExecuteApiRequest(requestBody)
 
     // Initialize services
     const masterDataService = new MasterDataService(ctx)
@@ -105,7 +111,7 @@ export async function executeApi(ctx: Context, next: () => Promise<any>) {
     // Handle unexpected errors
     await logToMasterData(ctx, 'executeApi', 'middleware', 'error', {
       error,
-      data: (ctx.request as any).body,
+      data: requestBody,
       message: 'Unexpected error during API execution',
     })
 

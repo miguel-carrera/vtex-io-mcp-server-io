@@ -13,6 +13,10 @@ import { getApiSpec } from './middlewares/getApiSpec'
 import { getApiPathSpec } from './middlewares/getApiPathSpec'
 import { executeApi } from './middlewares/executeApi'
 import { uploadApiSpec } from './middlewares/uploadApiSpec'
+import { mcpToolsList } from './middlewares/mcpToolsList'
+import { mcpToolsCall } from './middlewares/mcpToolsCall'
+import { mcpResourcesList } from './middlewares/mcpResourcesList'
+import { mcpResourcesRead } from './middlewares/mcpResourcesRead'
 
 const TIMEOUT_MS = 10 * 1000
 
@@ -70,6 +74,18 @@ export default new Service({
     }),
     uploadApiSpec: method({
       POST: [initialLoad, uploadApiSpec],
+    }),
+    mcpToolsList: method({
+      POST: [initialLoad, mcpToolsList],
+    }),
+    mcpToolsCall: method({
+      POST: [initialLoad, mcpToolsCall],
+    }),
+    mcpResourcesList: method({
+      POST: [initialLoad, mcpResourcesList],
+    }),
+    mcpResourcesRead: method({
+      POST: [initialLoad, mcpResourcesRead],
     }),
   },
 })

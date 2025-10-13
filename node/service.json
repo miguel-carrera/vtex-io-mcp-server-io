@@ -25,6 +25,22 @@
     "uploadApiSpec": {
       "path": "/_v/mcp_server/v0/admin/upload-spec",
       "public": false
+    },
+    "mcpToolsList": {
+      "path": "/_v/mcp_server/v0/mcp/tools/list",
+      "public": true
+    },
+    "mcpToolsCall": {
+      "path": "/_v/mcp_server/v0/mcp/tools/call",
+      "public": true
+    },
+    "mcpResourcesList": {
+      "path": "/_v/mcp_server/v0/mcp/resources/list",
+      "public": true
+    },
+    "mcpResourcesRead": {
+      "path": "/_v/mcp_server/v0/mcp/resources/read",
+      "public": true
     }
   },
   "events": {}
