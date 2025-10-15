@@ -26,7 +26,12 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
     requestBody = (await json(req)) as MCPRequest
 
     // Validate JSON-RPC request
-    if (!requestBody || requestBody.jsonrpc !== '2.0' || !requestBody.id) {
+    if (
+      !requestBody ||
+      requestBody.jsonrpc !== '2.0' ||
+      requestBody.id === undefined ||
+      requestBody.id === null
+    ) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',
@@ -192,6 +197,7 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
 
     // Use the HTTP status code from the error, or default to 500
     const httpStatusCode = mcpError.data?.httpStatusCode || 500
+
     ctx.status = httpStatusCode
 
     ctx.body = {

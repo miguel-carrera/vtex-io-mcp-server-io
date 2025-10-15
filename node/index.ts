@@ -20,6 +20,7 @@ import { mcpResourcesRead } from './middlewares/mcpResourcesRead'
 import { mcpHandshake } from './middlewares/mcpHandshake'
 import { mcpInitialize } from './middlewares/mcpInitialize'
 import { mcpInitialized } from './middlewares/mcpInitialized'
+import { mcpRouter } from './middlewares/mcpRouter'
 import { auth } from './middlewares/auth'
 import { errorHandler } from './middlewares/errorHandler'
 
@@ -103,6 +104,9 @@ export default new Service({
     }),
     mcpInitialized: method({
       POST: [errorHandler, auth, initialLoad, mcpInitialized],
+    }),
+    mcp: method({
+      POST: [errorHandler, auth, initialLoad, mcpRouter],
     }),
   },
 })
