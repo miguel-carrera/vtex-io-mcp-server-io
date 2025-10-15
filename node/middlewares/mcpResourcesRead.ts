@@ -23,7 +23,12 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
     requestBody = (await json(req)) as MCPRequest
 
     // Validate JSON-RPC request
-    if (!requestBody || requestBody.jsonrpc !== '2.0' || !requestBody.id) {
+    if (
+      !requestBody ||
+      requestBody.jsonrpc !== '2.0' ||
+      requestBody.id === undefined ||
+      requestBody.id === null
+    ) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',

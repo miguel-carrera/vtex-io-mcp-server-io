@@ -22,7 +22,12 @@ export async function mcpInitialize(ctx: Context, next: () => Promise<void>) {
     requestBody = (await json(req)) as MCPRequest
 
     // Validate JSON-RPC request
-    if (!requestBody || requestBody.jsonrpc !== '2.0' || !requestBody.id) {
+    if (
+      !requestBody ||
+      requestBody.jsonrpc !== '2.0' ||
+      requestBody.id === undefined ||
+      requestBody.id === null
+    ) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',
@@ -76,16 +81,21 @@ export async function mcpInitialize(ctx: Context, next: () => Promise<void>) {
     }
 
     // Check protocol version compatibility
-    const supportedVersion = '2024-11-05'
+    const supportedVersions = ['2024-11-05', '2025-03-26', '2025-06-18']
+    const supportedVersion = supportedVersions.includes(params.protocolVersion)
+      ? params.protocolVersion
+      : supportedVersions[0]
 
-    if (params.protocolVersion !== supportedVersion) {
+    if (!supportedVersions.includes(params.protocolVersion)) {
       ctx.status = 400
       ctx.body = {
         jsonrpc: '2.0',
         id: requestBody.id,
         error: {
           code: -32602,
-          message: `Unsupported protocol version. Expected: ${supportedVersion}, Got: ${params.protocolVersion}`,
+          message: `Unsupported protocol version. Supported versions: ${supportedVersions.join(
+            ', '
+          )}, Got: ${params.protocolVersion}`,
         },
       }
 

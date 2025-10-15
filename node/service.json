@@ -53,6 +53,10 @@
     "mcpInitialized": {
       "path": "/_v/mcp_server/v1/mcp/notifications/initialized",
       "public": true
+    },
+    "mcp": {
+      "path": "/_v/mcp_server/v1/mcp",
+      "public": true
     }
   },
   "events": {}
