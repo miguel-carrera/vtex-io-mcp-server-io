@@ -9,6 +9,7 @@ import { LRUCache, method, Service } from '@vtex/api'
 import { Clients } from './clients'
 import { initialLoad } from './middlewares/initialLoad'
 import { getApiDefinitions } from './middlewares/getApiDefinitions'
+import { getApiDefinitionsGroup } from './middlewares/getApiDefinitionsGroup'
 import { getApiSpec } from './middlewares/getApiSpec'
 import { getApiPathSpec } from './middlewares/getApiPathSpec'
 import { executeApi } from './middlewares/executeApi'
@@ -71,6 +72,9 @@ export default new Service({
   routes: {
     getApiDefinitions: method({
       GET: [errorHandler, auth, initialLoad, getApiDefinitions],
+    }),
+    getApiDefinitionsGroup: method({
+      GET: [errorHandler, auth, initialLoad, getApiDefinitionsGroup],
     }),
     getApiSpec: method({
       GET: [errorHandler, auth, initialLoad, getApiSpec],

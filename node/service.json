@@ -10,6 +10,10 @@
       "path": "/_v/mcp_server/v1/api-definitions",
       "public": true
     },
+    "getApiDefinitionsGroup": {
+      "path": "/_v/mcp_server/v1/api-definitions/:group",
+      "public": true
+    },
     "getApiSpec": {
       "path": "/_v/mcp_server/v1/api-spec/:group",
       "public": true

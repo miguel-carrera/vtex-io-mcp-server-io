@@ -122,6 +122,10 @@ curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions" \
 # Get specific API group
 curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions?group=OMS" \
   -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get specific API group using path param
+curl -X GET "https://myaccount.myvtex.com/_v/mcp_server/v1/api-definitions/OMS" \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 2. Get Single API Specification
