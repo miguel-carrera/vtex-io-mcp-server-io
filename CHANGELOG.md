@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-10-16
+
 ### Added
 
 - Generic MCP route `/_v/mcp_server/v1/mcp` in `service.json` and `index.ts`.
