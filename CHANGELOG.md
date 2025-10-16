@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Generic MCP route `/_v/mcp_server/v1/mcp` in `service.json` and `index.ts`.
+- Central `mcpRouter` to dispatch JSON-RPC 2.0 MCP methods.
+- Support for MCP protocol versions `2025-03-26` and `2025-06-18`.
+
+### Fixed
+
+- JSON-RPC `id` validation across middlewares to accept numeric ids (including `0`).
+- Implemented `notifications/initialized` handling in `mcpRouter` (HTTP 200, no body).
+- Resolved multiple stream consumption errors by implementing handlers directly in router:
+  - `tools/list`
+  - `tools/call`
+  - `resources/list`
+  - `resources/read`
+  - `handshake`
+- Eliminated "argument stream must be a stream" and "stream is not readable" errors caused by delegating to middlewares after body consumption.
+- Fixed tools listing internal error and preserved required request properties when delegating.
+
 ## [1.0.0] - 2025-10-13
 
 ### Added
