@@ -1,7 +1,7 @@
 {
   "name": "vtex-io-mcp-server",
   "vendor": "vendor",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "MCP Server for VTEX IO",
   "description": "MCP Server developed in VTEX IO to provide VTEX AI capabilities to agents",
   "mustUpdateAt": "2018-01-04",
