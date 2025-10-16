@@ -90,17 +90,35 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
     const apiExecutor = new APIExecutor(ctx.clients.vtexApi)
 
     let apiGroup: string
-    let operationId: string
+    let operationId: string | undefined
+    let method: string | undefined
+    let path: string | undefined
     let parameters: Record<string, any> = {}
     let body: any
 
     // Handle tool call
     if (name === 'vtex_api_call') {
       // General VTEX API call
-      apiGroup = args.apiGroup
-      operationId = args.operationId
-      parameters = args.parameters || {}
-      body = args.body
+      apiGroup = (args as any).apiGroup
+      operationId = (args as any).operationId
+      method = (args as any).method
+      path = (args as any).path
+      parameters = (args as any).parameters || {}
+      body = (args as any).body
+
+      if (!operationId && !(method && path)) {
+        ctx.status = 400
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: 'You must provide either operationId or method and path',
+          },
+        }
+
+        return
+      }
     } else {
       ctx.status = 400
       ctx.body = {
@@ -140,7 +158,7 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
     // Categorize parameters based on OpenAPI specification
     const categorizedParams = categorizeParameters(
       openApiSpec,
-      operationId,
+      operationId || { method: method as string, path: path as string },
       parameters
     )
 
@@ -148,6 +166,8 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
     const result = await apiExecutor.executeOperation(openApiSpec, {
       apiGroup,
       operationId,
+      method,
+      path,
       pathParams: categorizedParams.pathParams,
       queryParams: categorizedParams.queryParams,
       headers: categorizedParams.headers,
@@ -180,7 +200,7 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
       data: {
         toolName: name,
         apiGroup,
-        operationId,
+        operationId: operationId || `${method} ${path}`,
         success: true, // APIExecutor doesn't return success property, assume success unless exception
       },
       message: 'MCP tool call executed successfully',

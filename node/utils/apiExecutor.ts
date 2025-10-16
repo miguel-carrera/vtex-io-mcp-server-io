@@ -20,7 +20,9 @@ export interface APIExecutionContext {
 
 export interface ExecuteAPIOptions {
   apiGroup: string
-  operationId: string
+  operationId?: string
+  method?: string
+  path?: string
   pathParams?: Record<string, any>
   queryParams?: Record<string, any>
   headers?: Record<string, string>
@@ -40,17 +42,37 @@ export class APIExecutor {
     const startTime = Date.now()
 
     try {
-      // Find the operation in the OpenAPI spec
-      const operation = this.findOperation(spec, options.operationId)
+      // Resolve operation context either by operationId or by method+path
+      let operation: OpenAPIOperation | null = null
+      let resolvedMethod: string
+      let resolvedPath: string
 
-      if (!operation) {
-        throw new Error(
-          `Operation '${options.operationId}' not found in API specification`
+      if (options.operationId) {
+        operation = this.findOperation(spec, options.operationId)
+
+        if (!operation) {
+          throw new Error(
+            `Operation '${options.operationId}' not found in API specification`
+          )
+        }
+
+        const mp = this.getMethodAndPath(spec, options.operationId)
+
+        resolvedMethod = mp.method
+        resolvedPath = mp.path
+      } else if (options.method && options.path) {
+        const mp = this.findOperationByPathAndMethod(
+          spec,
+          options.method,
+          options.path
         )
-      }
 
-      // Get the HTTP method and path for this operation
-      const { method, path } = this.getMethodAndPath(spec, options.operationId)
+        operation = mp.operation
+        resolvedMethod = mp.method
+        resolvedPath = mp.path
+      } else {
+        throw new Error('You must provide either operationId or method+path')
+      }
 
       // Resolve parameters (path, query, headers)
       const resolvedParams = this.resolveParameters(
@@ -61,11 +83,11 @@ export class APIExecutor {
       )
 
       // Build the final path with resolved path parameters
-      const finalPath = this.buildPath(path, resolvedParams.pathParams)
+      const finalPath = this.buildPath(resolvedPath, resolvedParams.pathParams)
 
       // Prepare request configuration
       const requestConfig = {
-        method: method as any,
+        method: resolvedMethod as any,
         path: finalPath,
         headers: resolvedParams.headers,
         query: resolvedParams.queryParams,
@@ -90,7 +112,7 @@ export class APIExecutor {
           executionTime,
           apiGroup: options.apiGroup,
           operationId: options.operationId,
-          method,
+          method: resolvedMethod,
           path: finalPath,
           contentType,
           responseHeaders,
@@ -184,6 +206,32 @@ export class APIExecutor {
     }
 
     throw new Error(`Operation '${operationId}' not found in API specification`)
+  }
+
+  /**
+   * Find an operation by explicit method and path from the spec
+   */
+  private findOperationByPathAndMethod(
+    spec: OpenAPISpec,
+    method: string,
+    path: string
+  ): { operation: OpenAPIOperation; method: string; path: string } {
+    const normalizedMethod = method.toLowerCase()
+    const pathItem = (spec.paths as any)[path]
+
+    if (!pathItem) {
+      throw new Error(`Path '${path}' not found in API specification`)
+    }
+
+    const operation = pathItem[normalizedMethod] as OpenAPIOperation | undefined
+
+    if (!operation) {
+      throw new Error(
+        `Method '${method.toUpperCase()}' not available for path '${path}'`
+      )
+    }
+
+    return { operation, method: method.toUpperCase(), path }
   }
 
   /**
