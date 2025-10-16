@@ -73,9 +73,8 @@ export async function mcpResourcesList(
     // Only include API specification resources; remove path resources
     const resources = specsMetadata.map((spec) => ({
       uri: `vtex://api-spec/${spec.apiGroup}`,
-      name: `${spec.apiGroup} API Specification`,
-      description:
-        spec.description ?? `OpenAPI specification for ${spec.apiGroup} API`,
+      name: `${spec.apiGroup} APIs Operations`,
+      description: `Provides a list of VTEX APIs Operations for ${spec.apiGroup} API group`,
       mimeType: 'application/json',
     }))
 

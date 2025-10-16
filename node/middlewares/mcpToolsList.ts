@@ -73,13 +73,13 @@ export async function mcpToolsList(ctx: Context, next: () => Promise<any>) {
     // Add a general VTEX API tool
     const generalTool: MCPTool = {
       name: 'vtex_api_call',
-      description: 'Execute any VTEX API call dynamically',
+      description: 'Execute any VTEX API operation call dynamically',
       inputSchema: {
         type: 'object',
         properties: {
           apiGroup: {
             type: 'string',
-            description: 'The API group (e.g., OMS, Catalog)',
+            description: 'The API group (e.g., Orders, Catalog)',
             enum: specsMetadata.map((spec) => spec.apiGroup),
           },
           operationId: {
@@ -112,6 +112,42 @@ export async function mcpToolsList(ctx: Context, next: () => Promise<any>) {
     }
 
     tools.push(generalTool)
+
+    // Add a tool to retrieve API path specification for a given operation
+    const specTool: MCPTool = {
+      name: 'vtex_api_specification',
+      description:
+        'Retrieve the OpenAPI specification for a VTEX API operation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          apiGroup: {
+            type: 'string',
+            description: 'The API group (e.g., Orders, Catalog)',
+            enum: specsMetadata.map((spec) => spec.apiGroup),
+          },
+          operationId: {
+            type: 'string',
+            description:
+              'The operation ID to lookup (preferred, falls back to method+path)',
+          },
+          method: {
+            type: 'string',
+            description:
+              'HTTP method when using path-based lookup (fallback if no operationId)',
+            enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+          },
+          path: {
+            type: 'string',
+            description:
+              'OpenAPI path (e.g., /api/catalog/pvt/sku/{id}) when not using operationId',
+          },
+        },
+        required: ['apiGroup'],
+      },
+    }
+
+    tools.push(specTool)
 
     const response: MCPToolsListResponse = {
       tools,
