@@ -1,5 +1,3 @@
-import { Readable } from 'stream'
-
 import { json } from 'co-body'
 
 import type {
@@ -174,18 +172,6 @@ export async function mcpRouter(ctx: Context, next: () => Promise<void>) {
       },
     }
   }
-}
-
-// Helper function to create a readable stream from parsed JSON
-function createReadableStreamFromJSON(data: any): Readable {
-  const jsonString = JSON.stringify(data)
-
-  return new Readable({
-    read() {
-      this.push(jsonString)
-      this.push(null) // End the stream
-    },
-  }) as any
 }
 
 // Handler functions that implement the logic directly
@@ -575,48 +561,349 @@ async function handleToolsCall(ctx: Context, requestBody: MCPRequest) {
 }
 
 async function handleResourcesList(ctx: Context, requestBody: MCPRequest) {
-  const { mcpResourcesList } = await import('./mcpResourcesList')
-
-  const newStream = createReadableStreamFromJSON(requestBody)
-  const mockReq = {
-    ...ctx.req,
-    ...newStream,
-    headers: ctx.req.headers,
-    url: ctx.req.url,
-    method: ctx.req.method,
-  }
-
-  const originalReq = ctx.req
-
-  ctx.req = mockReq as any
-
   try {
-    await mcpResourcesList(ctx, async () => {})
-  } finally {
-    ctx.req = originalReq
+    // eslint-disable-next-line no-console
+    console.log('**** handleResourcesList - requestBody:', requestBody)
+
+    // Import required types and services
+    const { MasterDataService } = await import('../services/masterDataService')
+    const { getValidMethodsForEndpoint } = await import('../utils/mcpUtils')
+
+    // Validate method - accept both 'resources/list' and 'mcp/resources/list'
+    const validMethods = getValidMethodsForEndpoint('resources/list')
+
+    if (!validMethods.includes(requestBody.method)) {
+      ctx.status = 400
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id,
+        error: {
+          code: -32601,
+          message: 'Method not found',
+        },
+      }
+
+      return
+    }
+
+    // Initialize MasterData service
+    const masterDataService = new MasterDataService(ctx)
+
+    // Get all API specifications
+    const specsMetadata = await masterDataService.getAPISpecs()
+
+    // Add individual path resources for each API group
+    const pathResourcePromises = specsMetadata.map(async (spec) => {
+      try {
+        // Fetch the OpenAPI spec to get paths
+        const openApiSpec = await masterDataService.fetchSpecFromUrl(
+          spec.specUrl
+        )
+
+        if (openApiSpec.paths) {
+          return Object.keys(openApiSpec.paths).map((path) => {
+            const pathItem = openApiSpec.paths[path]
+
+            // Extract description from the first available operation (GET, POST, etc.)
+            let pathDescription = `API path specification for ${path} in ${spec.apiGroup}`
+
+            if (pathItem) {
+              // Try to get description from the first available operation
+              const operations = [
+                'get',
+                'post',
+                'put',
+                'patch',
+                'delete',
+                'head',
+                'options',
+              ]
+
+              for (const method of operations) {
+                const operation = pathItem[method as keyof typeof pathItem]
+
+                if (
+                  operation &&
+                  typeof operation === 'object' &&
+                  'summary' in operation
+                ) {
+                  const summary = operation.summary || ''
+                  const description = operation.description || ''
+
+                  // Combine summary and description if both exist
+                  if (summary && description) {
+                    pathDescription = `${summary}: ${description}`
+                  } else if (summary) {
+                    pathDescription = summary
+                  } else if (description) {
+                    pathDescription = description
+                  }
+
+                  break
+                }
+              }
+            }
+
+            return {
+              uri: `vtex://api-path/${spec.apiGroup}${path}`,
+              name: `${spec.apiGroup}:${path}`,
+              description: pathDescription,
+              mimeType: 'application/json',
+            }
+          })
+        }
+
+        return []
+      } catch (error) {
+        // Log error but continue with other resources
+        await logToMasterData(ctx, 'mcpRouter', 'middleware', 'warn', {
+          data: { apiGroup: spec.apiGroup },
+          message: 'Failed to fetch paths for API group',
+          error,
+        })
+
+        return []
+      }
+    })
+
+    // Wait for all path resources to be fetched
+    const pathResourceArrays = await Promise.all(pathResourcePromises)
+    const pathResources = pathResourceArrays.flat()
+
+    const response = {
+      resources: pathResources,
+    }
+
+    const mcpResponse = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      result: response,
+    }
+
+    ctx.status = 200
+    ctx.body = mcpResponse
+
+    // Log the request for monitoring
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'info', {
+      data: {
+        resourcesCount: pathResources.length,
+        apiGroups: specsMetadata.map((spec) => spec.apiGroup),
+      },
+      message: 'MCP resources list retrieved successfully via router',
+    })
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log('**** handleResourcesList - error:', error)
+
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'error', {
+      error,
+      message: 'Failed to retrieve MCP resources list via router',
+    })
+
+    ctx.status = 500
+    ctx.body = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      error: {
+        code: -32603,
+        message: 'Internal error',
+      },
+    }
   }
 }
 
 async function handleResourcesRead(ctx: Context, requestBody: MCPRequest) {
-  const { mcpResourcesRead } = await import('./mcpResourcesRead')
-
-  const newStream = createReadableStreamFromJSON(requestBody)
-  const mockReq = {
-    ...ctx.req,
-    ...newStream,
-    headers: ctx.req.headers,
-    url: ctx.req.url,
-    method: ctx.req.method,
-  }
-
-  const originalReq = ctx.req
-
-  ctx.req = mockReq as any
-
   try {
-    await mcpResourcesRead(ctx, async () => {})
-  } finally {
-    ctx.req = originalReq
+    // eslint-disable-next-line no-console
+    console.log('**** handleResourcesRead - requestBody:', requestBody)
+
+    // Import required types and services
+    const { MasterDataService } = await import('../services/masterDataService')
+    const { getValidMethodsForEndpoint } = await import('../utils/mcpUtils')
+
+    // Validate method - accept both 'resources/read' and 'mcp/resources/read'
+    const validMethods = getValidMethodsForEndpoint('resources/read')
+
+    if (!validMethods.includes(requestBody.method)) {
+      ctx.status = 400
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id,
+        error: {
+          code: -32601,
+          message: 'Method not found',
+        },
+      }
+
+      return
+    }
+
+    // Validate params
+    if (!requestBody.params || !requestBody.params.uri) {
+      ctx.status = 400
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id,
+        error: {
+          code: -32602,
+          message: 'Invalid params - uri is required',
+        },
+      }
+
+      return
+    }
+
+    const { uri } = requestBody.params
+
+    // Initialize MasterData service
+    const masterDataService = new MasterDataService(ctx)
+
+    let content: string
+    let mimeType: string
+
+    // Parse the URI to determine what to return
+    if (uri.startsWith('vtex://api-spec/')) {
+      // Full API specification
+      const apiGroup = uri.replace('vtex://api-spec/', '')
+
+      const specMetadata = await masterDataService.getAPISpecByGroup(apiGroup)
+
+      if (!specMetadata) {
+        ctx.status = 404
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: `API group '${apiGroup}' not found`,
+          },
+        }
+
+        return
+      }
+
+      // Fetch the full OpenAPI specification
+      const openApiSpec = await masterDataService.fetchSpecFromUrl(
+        specMetadata.specUrl
+      )
+
+      content = JSON.stringify(openApiSpec, null, 2)
+      mimeType = 'application/json'
+    } else if (uri.startsWith('vtex://api-path/')) {
+      // Specific API path
+      const pathPart = uri.replace('vtex://api-path/', '')
+      const [apiGroup, ...pathParts] = pathPart.split('/')
+      const path = `/${pathParts.join('/')}`
+
+      const specMetadata = await masterDataService.getAPISpecByGroup(apiGroup)
+
+      if (!specMetadata) {
+        ctx.status = 404
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: `API group '${apiGroup}' not found`,
+          },
+        }
+
+        return
+      }
+
+      // Fetch the full OpenAPI specification
+      const openApiSpec = await masterDataService.fetchSpecFromUrl(
+        specMetadata.specUrl
+      )
+
+      // Find the specific path
+      const pathSpec = openApiSpec.paths?.[path]
+
+      if (!pathSpec) {
+        ctx.status = 404
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: `Path '${path}' not found in API group '${apiGroup}'`,
+          },
+        }
+
+        return
+      }
+
+      // Return the path specification with metadata
+      const pathResponse = {
+        group: specMetadata.apiGroup,
+        version: specMetadata.version,
+        path,
+        pathSpec,
+        enabled: specMetadata.enabled,
+        description: specMetadata.description,
+      }
+
+      content = JSON.stringify(pathResponse, null, 2)
+      mimeType = 'application/json'
+    } else {
+      ctx.status = 400
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id,
+        error: {
+          code: -32602,
+          message: `Unsupported URI format: ${uri}`,
+        },
+      }
+
+      return
+    }
+
+    const response = {
+      contents: [
+        {
+          uri,
+          mimeType,
+          text: content,
+        },
+      ],
+    }
+
+    const mcpResponse = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      result: response,
+    }
+
+    ctx.status = 200
+    ctx.body = mcpResponse
+
+    // Log the request for monitoring
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'info', {
+      data: {
+        uri,
+        mimeType,
+      },
+      message: 'MCP resource read successfully via router',
+    })
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log('**** handleResourcesRead - error:', error)
+
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'error', {
+      error,
+      message: 'Failed to read MCP resource via router',
+    })
+
+    ctx.status = 500
+    ctx.body = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      error: {
+        code: -32603,
+        message: 'Internal error',
+      },
+    }
   }
 }
 
@@ -652,24 +939,91 @@ async function handleInitialized(ctx: Context, requestBody: MCPRequest) {
 }
 
 async function handleHandshake(ctx: Context, requestBody: MCPRequest) {
-  const { mcpHandshake } = await import('./mcpHandshake')
-
-  const newStream = createReadableStreamFromJSON(requestBody)
-  const mockReq = {
-    ...ctx.req,
-    ...newStream,
-    headers: ctx.req.headers,
-    url: ctx.req.url,
-    method: ctx.req.method,
-  }
-
-  const originalReq = ctx.req
-
-  ctx.req = mockReq as any
-
   try {
-    await mcpHandshake(ctx, async () => {})
-  } finally {
-    ctx.req = originalReq
+    // eslint-disable-next-line no-console
+    console.log('**** handleHandshake - requestBody:', requestBody)
+
+    // Import required services
+    const { getValidMethodsForEndpoint } = await import('../utils/mcpUtils')
+
+    // Validate method - accept both 'mcp/handshake' and 'handshake'
+    const validMethods = getValidMethodsForEndpoint('handshake')
+
+    if (!validMethods.includes(requestBody.method)) {
+      ctx.status = 400
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id,
+        error: {
+          code: -32601,
+          message: 'Method not found',
+        },
+      }
+
+      return
+    }
+
+    // Extract handshake parameters
+    const params = requestBody.params || {}
+    const clientVersion = params.version || 'unknown'
+    const clientCapabilities = params.capabilities || []
+
+    // Check if client version is compatible
+    const supportedVersions = ['1.0.0', '2024-11-05']
+    const isVersionCompatible = supportedVersions.includes(clientVersion)
+
+    // Define server capabilities
+    const serverCapabilities = ['resources', 'tools', 'logging']
+
+    // Create handshake response
+    const response = {
+      version: '1.0.0',
+      capabilities: serverCapabilities,
+      compatible: isVersionCompatible,
+      serverInfo: {
+        name: 'VTEX IO MCP Server',
+        version: '1.0.0',
+        description:
+          'Model Context Protocol server for VTEX IO API integration',
+      },
+    }
+
+    const mcpResponse = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      result: response,
+    }
+
+    ctx.status = 200
+    ctx.body = mcpResponse
+
+    // Log the handshake for monitoring
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'info', {
+      data: {
+        clientVersion,
+        clientCapabilities,
+        isVersionCompatible,
+        serverCapabilities,
+      },
+      message: 'MCP handshake completed via router',
+    })
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log('**** handleHandshake - error:', error)
+
+    await logToMasterData(ctx, 'mcpRouter', 'middleware', 'error', {
+      error,
+      message: 'Failed to process MCP handshake via router',
+    })
+
+    ctx.status = 500
+    ctx.body = {
+      jsonrpc: '2.0',
+      id: requestBody.id,
+      error: {
+        code: -32603,
+        message: 'Internal error',
+      },
+    }
   }
 }
