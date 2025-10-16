@@ -86,7 +86,7 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
 
     // Parse the URI to determine what to return
     if (uri.startsWith('vtex://api-spec/')) {
-      // Full API specification
+      // Return the same structure as /_v/mcp_server/v1/api-definitions/:group
       const apiGroup = uri.replace('vtex://api-spec/', '')
 
       const specMetadata = await masterDataService.getAPISpecByGroup(apiGroup)
@@ -110,7 +110,50 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
         specMetadata.specUrl
       )
 
-      content = JSON.stringify(openApiSpec, null, 2)
+      // Build endpoints list: one item per method per path
+      const endpoints: Array<{
+        uri: string
+        description?: string
+      }> = []
+
+      for (const [path, pathItem] of Object.entries(openApiSpec.paths || {})) {
+        const methods = [
+          'get',
+          'post',
+          'put',
+          'patch',
+          'delete',
+          'options',
+          'head',
+        ]
+
+        for (const m of methods) {
+          const op: any = (pathItem as any)[m]
+
+          if (!op) continue
+
+          const pathDescription: string | undefined = (pathItem as any)
+            .description
+
+          const description: string | undefined =
+            op.summary || op.description || pathDescription
+
+          const endpointUri = `vtex://api-path/${specMetadata.apiGroup}${path}`
+
+          endpoints.push({
+            uri: endpointUri,
+            description,
+          })
+        }
+      }
+
+      const payload = {
+        group: specMetadata.apiGroup,
+        version: specMetadata.version,
+        resources: endpoints,
+      }
+
+      content = JSON.stringify(payload, null, 2)
       mimeType = 'application/json'
     } else if (uri.startsWith('vtex://api-path/')) {
       // Specific API path
