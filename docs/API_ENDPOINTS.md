@@ -72,6 +72,7 @@ All endpoints require VTEX authentication. The server supports two authenticatio
 - **Enhanced Error Handling**: HTTP status codes and error messages are now properly mapped to MCP error responses using consistent JSON-RPC 2.0 error codes
 - **Promise Handling**: Proper promise return patterns for HTTP client methods
 - **Response Metadata**: Enhanced metadata including execution time, content type, and response headers
+- **Operation Selection Flexibility (MCP)**: Tools can execute by `operationId` (preferred) or by explicit `method` + `path` when an operationId is unavailable
 
 ## Endpoints
 
@@ -660,7 +661,24 @@ The following endpoints implement the Model Context Protocol (MCP) specification
             },
             "operationId": {
               "type": "string",
-              "description": "The operation ID to execute"
+              "description": "The operation ID to execute (preferred)"
+            },
+            "method": {
+              "type": "string",
+              "description": "HTTP method when using path-based execution",
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "HEAD",
+                "OPTIONS"
+              ]
+            },
+            "path": {
+              "type": "string",
+              "description": "OpenAPI path (e.g., /api/catalog/pvt/sku/{id}) when not using operationId"
             },
             "parameters": {
               "type": "object",
@@ -673,7 +691,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
               "additionalProperties": true
             }
           },
-          "required": ["apiGroup", "operationId"]
+          "required": ["apiGroup"]
         }
       }
     ]
@@ -728,6 +746,27 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 }
 ```
 
+**Alternative Example using method + path (no operationId):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "vtex_api_call",
+    "arguments": {
+      "apiGroup": "OMS",
+      "method": "GET",
+      "path": "/api/oms/pvt/orders/{orderId}",
+      "parameters": {
+        "orderId": "1172452900788-01"
+      }
+    }
+  }
+}
+```
+
 **Response:**
 
 ```json
@@ -770,6 +809,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 - This endpoint executes the specified tool with the provided arguments
 - The `vtex_api_call` tool allows dynamic execution of any VTEX API
+- **Operation selection**: Prefer `operationId` when available. If the specification lacks a reliable operationId, you may provide explicit `method` and `path` instead. Supplying both styles is allowed; `operationId` takes precedence.
 - **Parameter Categorization**: Parameters are automatically categorized based on the OpenAPI specification:
   - `path` parameters (like `orderId` in `/api/oms/pvt/orders/{orderId}`) are used in the URL path
   - `query` parameters are added to the URL query string

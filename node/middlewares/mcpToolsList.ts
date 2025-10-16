@@ -84,7 +84,17 @@ export async function mcpToolsList(ctx: Context, next: () => Promise<any>) {
           },
           operationId: {
             type: 'string',
-            description: 'The operation ID to execute',
+            description: 'The operation ID to execute (preferred)',
+          },
+          method: {
+            type: 'string',
+            description: 'HTTP method when using path-based execution',
+            enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+          },
+          path: {
+            type: 'string',
+            description:
+              'OpenAPI path (e.g., /api/catalog/pvt/sku/{id}) when not using operationId',
           },
           parameters: {
             type: 'object',
@@ -97,7 +107,7 @@ export async function mcpToolsList(ctx: Context, next: () => Promise<any>) {
             additionalProperties: true,
           },
         },
-        required: ['apiGroup', 'operationId'],
+        required: ['apiGroup'],
       },
     }
 

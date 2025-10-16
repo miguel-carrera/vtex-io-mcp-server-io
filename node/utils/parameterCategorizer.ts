@@ -19,7 +19,7 @@ export interface CategorizedParameters {
  */
 export function categorizeParameters(
   openApiSpec: OpenAPISpec,
-  operationId: string,
+  operationOrLocator: string | { method: string; path: string },
   providedParams: Record<string, any>
 ): CategorizedParameters {
   const result: CategorizedParameters = {
@@ -29,7 +29,17 @@ export function categorizeParameters(
   }
 
   // Find the operation
-  const operation = findOperation(openApiSpec, operationId)
+  let operation: OpenAPIOperation | null = null
+
+  if (typeof operationOrLocator === 'string') {
+    operation = findOperation(openApiSpec, operationOrLocator)
+  } else {
+    operation = findOperationByPathAndMethod(
+      openApiSpec,
+      operationOrLocator.method,
+      operationOrLocator.path
+    )
+  }
 
   if (!operation || !operation.parameters) {
     // If no operation found or no parameters defined, treat all as query params
@@ -111,4 +121,21 @@ function findOperation(
   }
 
   return null
+}
+
+/**
+ * Finds an operation by explicit method and path
+ */
+function findOperationByPathAndMethod(
+  spec: OpenAPISpec,
+  method: string,
+  path: string
+): OpenAPIOperation | null {
+  const pathItem = (spec.paths as any)[path]
+
+  if (!pathItem) return null
+
+  const op = pathItem[method.toLowerCase()]
+
+  return (op || null) as OpenAPIOperation | null
 }

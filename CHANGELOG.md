@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Method+path fallback for MCP tools execution when `operationId` is unavailable.
+- Extended `APIExecutor` to accept `operationId` or `{ method, path }` and added `findOperationByPathAndMethod`.
+- Updated `parameterCategorizer` to resolve operation by `operationId` or `{ method, path }`.
+- `mcpToolsCall` now accepts `method` and `path` when `operationId` is not provided and validates at least one approach is present.
+- `mcpToolsList` tool input schema documents `method` and `path` alongside preferred `operationId`.
+- Documentation updated to reflect operation selection flexibility and new examples.
+
 ## [1.0.1] - 2025-10-16
 
 ### Added
