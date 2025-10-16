@@ -117,6 +117,8 @@ export class APIExecutor {
     spec: OpenAPISpec,
     operationId: string
   ): OpenAPIOperation | null {
+    const targetId = operationId.toLowerCase()
+
     for (const [, pathItem] of Object.entries(spec.paths)) {
       const methods = [
         'get',
@@ -133,7 +135,11 @@ export class APIExecutor {
           method as keyof typeof pathItem
         ] as OpenAPIOperation
 
-        if (operation && operation.operationId === operationId) {
+        if (
+          operation &&
+          operation.operationId &&
+          operation.operationId.toLowerCase() === targetId
+        ) {
           return operation
         }
       }
@@ -149,6 +155,8 @@ export class APIExecutor {
     spec: OpenAPISpec,
     operationId: string
   ): { method: string; path: string } {
+    const targetId = operationId.toLowerCase()
+
     for (const [path, pathItem] of Object.entries(spec.paths)) {
       const methods = [
         'get',
@@ -165,7 +173,11 @@ export class APIExecutor {
           method as keyof typeof pathItem
         ] as OpenAPIOperation
 
-        if (operation && operation.operationId === operationId) {
+        if (
+          operation &&
+          operation.operationId &&
+          operation.operationId.toLowerCase() === targetId
+        ) {
           return { method: method.toUpperCase(), path }
         }
       }

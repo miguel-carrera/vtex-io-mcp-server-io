@@ -31,11 +31,7 @@ export async function mcpRouter(ctx: Context, next: () => Promise<void>) {
     requestBody = (await json(req)) as MCPRequest
 
     await logToMasterData(ctx, 'mcpRouter-request', '', 'debug', {
-      data: {
-        hasBody: !!requestBody,
-        id: (requestBody as any)?.id ?? null,
-        method: (requestBody as any)?.method ?? null,
-      },
+      requestBody,
       message: 'mcpRouter request parsed',
     })
 
