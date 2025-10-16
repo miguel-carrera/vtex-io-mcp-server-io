@@ -112,7 +112,9 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
 
       // Build endpoints list: one item per method per path
       const endpoints: Array<{
-        uri: string
+        path: string
+        method: string
+        operationId?: string
         description?: string
       }> = []
 
@@ -138,10 +140,12 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
           const description: string | undefined =
             op.summary || op.description || pathDescription
 
-          const endpointUri = `vtex://api-path/${specMetadata.apiGroup}${path}`
+          const { operationId } = op as any
 
           endpoints.push({
-            uri: endpointUri,
+            path,
+            method: m.toUpperCase(),
+            operationId,
             description,
           })
         }
@@ -150,66 +154,10 @@ export async function mcpResourcesRead(ctx: Context, next: () => Promise<any>) {
       const payload = {
         group: specMetadata.apiGroup,
         version: specMetadata.version,
-        resources: endpoints,
+        endpoints,
       }
 
       content = JSON.stringify(payload, null, 2)
-      mimeType = 'application/json'
-    } else if (uri.startsWith('vtex://api-path/')) {
-      // Specific API path
-      const pathPart = uri.replace('vtex://api-path/', '')
-      const [apiGroup, ...pathParts] = pathPart.split('/')
-      const path = `/${pathParts.join('/')}`
-
-      const specMetadata = await masterDataService.getAPISpecByGroup(apiGroup)
-
-      if (!specMetadata) {
-        ctx.status = 404
-        ctx.body = {
-          jsonrpc: '2.0',
-          id: requestBody.id,
-          error: {
-            code: -32602,
-            message: `API group '${apiGroup}' not found`,
-          },
-        }
-
-        return
-      }
-
-      // Fetch the full OpenAPI specification
-      const openApiSpec = await masterDataService.fetchSpecFromUrl(
-        specMetadata.specUrl
-      )
-
-      // Find the specific path
-      const pathSpec = openApiSpec.paths?.[path]
-
-      if (!pathSpec) {
-        ctx.status = 404
-        ctx.body = {
-          jsonrpc: '2.0',
-          id: requestBody.id,
-          error: {
-            code: -32602,
-            message: `Path '${path}' not found in API group '${apiGroup}'`,
-          },
-        }
-
-        return
-      }
-
-      // Return the path specification with metadata
-      const pathResponse = {
-        group: specMetadata.apiGroup,
-        version: specMetadata.version,
-        path,
-        pathSpec,
-        enabled: specMetadata.enabled,
-        description: specMetadata.description,
-      }
-
-      content = JSON.stringify(pathResponse, null, 2)
       mimeType = 'application/json'
     } else {
       ctx.status = 400

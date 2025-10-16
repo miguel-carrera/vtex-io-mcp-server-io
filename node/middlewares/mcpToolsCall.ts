@@ -119,6 +119,26 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
 
         return
       }
+    } else if (name === 'vtex_api_specification') {
+      // Return OpenAPI path spec for the provided operation
+      apiGroup = (args as any).apiGroup
+      operationId = (args as any).operationId
+      method = (args as any).method
+      path = (args as any).path
+
+      if (!operationId && !(method && path)) {
+        ctx.status = 400
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: 'You must provide either operationId or method and path',
+          },
+        }
+
+        return
+      }
     } else {
       ctx.status = 400
       ctx.body = {
@@ -155,35 +175,107 @@ export async function mcpToolsCall(ctx: Context, next: () => Promise<any>) {
       specMetadata.specUrl
     )
 
-    // Categorize parameters based on OpenAPI specification
-    const categorizedParams = categorizeParameters(
-      openApiSpec,
-      operationId || { method: method as string, path: path as string },
-      parameters
-    )
+    let mcpResponse: MCPToolsCallResponse
 
-    // Execute the API call
-    const result = await apiExecutor.executeOperation(openApiSpec, {
-      apiGroup,
-      operationId,
-      method,
-      path,
-      pathParams: categorizedParams.pathParams,
-      queryParams: categorizedParams.queryParams,
-      headers: categorizedParams.headers,
-      body,
-    })
+    if (name === 'vtex_api_call') {
+      // Categorize parameters based on OpenAPI specification
+      const categorizedParams = categorizeParameters(
+        openApiSpec,
+        operationId || { method: method as string, path: path as string },
+        parameters
+      )
 
-    // Format response according to MCP specification
-    const mcpResponse: MCPToolsCallResponse = {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-          mimeType: result.metadata?.contentType || 'application/json',
-        },
-      ],
-      isError: false, // APIExecutor doesn't return success property, assume success unless exception
+      // Execute the API call
+      const result = await apiExecutor.executeOperation(openApiSpec, {
+        apiGroup,
+        operationId,
+        method,
+        path,
+        pathParams: categorizedParams.pathParams,
+        queryParams: categorizedParams.queryParams,
+        headers: categorizedParams.headers,
+        body,
+      })
+
+      mcpResponse = {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+            mimeType: result.metadata?.contentType || 'application/json',
+          },
+        ],
+        isError: false,
+      }
+    } else {
+      // vtex_api_specification: return same as resources/read for vtex://api-path/
+      // Find the specific path spec
+      let resolvedPath: string | undefined = path
+
+      if (!resolvedPath && operationId) {
+        // Resolve path by operationId
+        for (const [p, pathItem] of Object.entries(openApiSpec.paths || {})) {
+          const methods = [
+            'get',
+            'post',
+            'put',
+            'patch',
+            'delete',
+            'options',
+            'head',
+          ]
+
+          for (const m of methods) {
+            const op: any = (pathItem as any)[m]
+
+            if (op && op.operationId === operationId) {
+              resolvedPath = p
+              method = (m as string).toUpperCase()
+              break
+            }
+          }
+
+          if (resolvedPath) break
+        }
+      }
+
+      const pathSpec = resolvedPath
+        ? (openApiSpec.paths as any)[resolvedPath]
+        : undefined
+
+      if (!resolvedPath || !pathSpec) {
+        ctx.status = 404
+        ctx.body = {
+          jsonrpc: '2.0',
+          id: requestBody.id,
+          error: {
+            code: -32602,
+            message: 'Path not found for the given operation',
+          },
+        }
+
+        return
+      }
+
+      const pathResponse = {
+        group: specMetadata.apiGroup,
+        version: specMetadata.version,
+        path: resolvedPath,
+        pathSpec,
+        enabled: specMetadata.enabled,
+        description: specMetadata.description,
+      }
+
+      mcpResponse = {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(pathResponse, null, 2),
+            mimeType: 'application/json',
+          },
+        ],
+        isError: false,
+      }
     }
 
     const response: MCPResponse = {

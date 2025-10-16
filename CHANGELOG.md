@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `mcpToolsCall` now accepts `method` and `path` when `operationId` is not provided and validates at least one approach is present.
 - `mcpToolsList` tool input schema documents `method` and `path` alongside preferred `operationId`.
 - Documentation updated to reflect operation selection flexibility and new examples.
+- New MCP tool `vtex_api_specification` to return the OpenAPI path specification for an operation (accepts `operationId` or falls back to `method` + `path`).
+
+### Changed
+
+- `resources/read` response for `vtex://api-spec/` now returns endpoints with `path`, `method` (uppercase), and optional `operationId` instead of `uri`.
+
+### Removed
+
+- `resources/read` no longer supports `vtex://api-path/` URIs (use the `vtex_api_specification` tool instead).
 
 ## [1.0.1] - 2025-10-16
 
