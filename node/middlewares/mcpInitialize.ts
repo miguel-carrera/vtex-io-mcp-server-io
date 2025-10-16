@@ -19,7 +19,9 @@ export async function mcpInitialize(ctx: Context, next: () => Promise<void>) {
   try {
     const { req } = ctx
 
-    requestBody = (await json(req)) as MCPRequest
+    requestBody =
+      ((ctx.state as any)?.mcpRequest as MCPRequest | undefined) ||
+      ((await json(req)) as MCPRequest)
 
     // Validate JSON-RPC request
     if (

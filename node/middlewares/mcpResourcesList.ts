@@ -22,7 +22,10 @@ export async function mcpResourcesList(
   try {
     const { req } = ctx
 
-    requestBody = (await json(req)) as MCPRequest
+    // Prefer request body passed by upstream router to avoid re-reading the stream
+    requestBody =
+      ((ctx.state as any)?.mcpRequest as MCPRequest | undefined) ||
+      ((await json(req)) as MCPRequest)
 
     // Validate JSON-RPC request
     if (
@@ -67,99 +70,17 @@ export async function mcpResourcesList(
     // Get all API specifications
     const specsMetadata = await masterDataService.getAPISpecs()
 
-    // Create MCP resources from API specifications
-    /*
-    const resources: MCPResource[] = specsMetadata.map((spec) => ({
+    // Only include API specification resources; remove path resources
+    const resources = specsMetadata.map((spec) => ({
       uri: `vtex://api-spec/${spec.apiGroup}`,
       name: `${spec.apiGroup} API Specification`,
       description:
         spec.description ?? `OpenAPI specification for ${spec.apiGroup} API`,
       mimeType: 'application/json',
     }))
-    */
-
-    // Add individual path resources for each API group
-    const pathResourcePromises = specsMetadata.map(async (spec) => {
-      try {
-        // Fetch the OpenAPI spec to get paths
-        const openApiSpec = await masterDataService.fetchSpecFromUrl(
-          spec.specUrl
-        )
-
-        if (openApiSpec.paths) {
-          return Object.keys(openApiSpec.paths).map((path) => {
-            const pathItem = openApiSpec.paths[path]
-
-            // Extract description from the first available operation (GET, POST, etc.)
-            let pathDescription = `API path specification for ${path} in ${spec.apiGroup}`
-
-            if (pathItem) {
-              // Try to get description from the first available operation
-              const operations = [
-                'get',
-                'post',
-                'put',
-                'patch',
-                'delete',
-                'head',
-                'options',
-              ]
-
-              for (const method of operations) {
-                const operation = pathItem[method as keyof typeof pathItem]
-
-                if (
-                  operation &&
-                  typeof operation === 'object' &&
-                  'summary' in operation
-                ) {
-                  const summary = operation.summary || ''
-                  const description = operation.description || ''
-
-                  // Combine summary and description if both exist
-                  if (summary && description) {
-                    pathDescription = `${summary}: ${description}`
-                  } else if (summary) {
-                    pathDescription = summary
-                  } else if (description) {
-                    pathDescription = description
-                  }
-
-                  break
-                }
-              }
-            }
-
-            return {
-              uri: `vtex://api-path/${spec.apiGroup}${path}`,
-              name: `${spec.apiGroup}:${path}`,
-              description: pathDescription,
-              mimeType: 'application/json',
-            }
-          })
-        }
-
-        return []
-      } catch (error) {
-        // Log error but continue with other resources
-        await logToMasterData(ctx, 'mcpResourcesList', 'middleware', 'warn', {
-          data: { apiGroup: spec.apiGroup },
-          message: 'Failed to fetch paths for API group',
-          error,
-        })
-
-        return []
-      }
-    })
-
-    // Wait for all path resources to be fetched
-    const pathResourceArrays = await Promise.all(pathResourcePromises)
-    const pathResources = pathResourceArrays.flat()
-
-    // resources.push(...pathResources)
 
     const response: MCPResourcesListResponse = {
-      resources: pathResources,
+      resources,
     }
 
     const mcpResponse: MCPResponse = {
@@ -174,7 +95,7 @@ export async function mcpResourcesList(
     // Log the request for monitoring
     await logToMasterData(ctx, 'mcpResourcesList', 'middleware', 'info', {
       data: {
-        resourcesCount: pathResources.length,
+        resourcesCount: resources.length,
         apiGroups: specsMetadata.map((spec) => spec.apiGroup),
       },
       message: 'MCP resources list retrieved successfully',
