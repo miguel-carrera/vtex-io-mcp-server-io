@@ -693,6 +693,42 @@ The following endpoints implement the Model Context Protocol (MCP) specification
           },
           "required": ["apiGroup"]
         }
+      },
+      {
+        "name": "vtex_api_specification",
+        "description": "Retrieve the OpenAPI path specification for a VTEX API operation",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "apiGroup": {
+              "type": "string",
+              "description": "The API group (e.g., OMS, Catalog)",
+              "enum": ["OMS", "Catalog"]
+            },
+            "operationId": {
+              "type": "string",
+              "description": "The operation ID to lookup (preferred)"
+            },
+            "method": {
+              "type": "string",
+              "description": "HTTP method when using path-based lookup (fallback)",
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "HEAD",
+                "OPTIONS"
+              ]
+            },
+            "path": {
+              "type": "string",
+              "description": "OpenAPI path (e.g., /api/catalog/pvt/sku/{id}) when not using operationId"
+            }
+          },
+          "required": ["apiGroup"]
+        }
       }
     ]
   }
@@ -763,6 +799,42 @@ The following endpoints implement the Model Context Protocol (MCP) specification
         "orderId": "1172452900788-01"
       }
     }
+  }
+}
+```
+
+**Example: vtex_api_specification to retrieve path spec**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "tools/call",
+  "params": {
+    "name": "vtex_api_specification",
+    "arguments": {
+      "apiGroup": "OMS",
+      "operationId": "getOrders"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"group\": \"OMS\",\n  \"version\": \"1.0\",\n  \"path\": \"/api/oms/pvt/orders\",\n  \"pathSpec\": { /* OpenAPI path object */ }\n}",
+        "mimeType": "application/json"
+      }
+    ],
+    "isError": false
   }
 }
 ```
@@ -852,12 +924,6 @@ The following endpoints implement the Model Context Protocol (MCP) specification
         "name": "OMS API Specification",
         "description": "OpenAPI specification for OMS API",
         "mimeType": "application/json"
-      },
-      {
-        "uri": "vtex://api-path/OMS/api/oms/pvt/orders",
-        "name": "OMS /api/oms/pvt/orders API Path",
-        "description": "API path specification for /api/oms/pvt/orders in OMS",
-        "mimeType": "application/json"
       }
     ]
   }
@@ -868,7 +934,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 
 **Endpoint:** `POST /_v/mcp_server/v1/mcp/resources/read`
 
-**Purpose:** Read a specific resource (API specification)
+**Purpose:** Read a specific resource (API specification). For API path specifications, use the `vtex_api_specification` tool instead.
 
 **Request Body:**
 
@@ -883,7 +949,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
 }
 ```
 
-**Response:**
+**Response (for `vtex://api-spec/{group}`):**
 
 ```json
 {
@@ -894,7 +960,7 @@ The following endpoints implement the Model Context Protocol (MCP) specification
       {
         "uri": "vtex://api-spec/OMS",
         "mimeType": "application/json",
-        "text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": { /* OpenAPI spec */ }\n}"
+        "text": "{\n  \"group\": \"OMS\",\n  \"version\": \"1.0\",\n  \"endpoints\": [\n    { \n      \"path\": \"/api/oms/pvt/orders\",\n      \"method\": \"GET\",\n      \"operationId\": \"getOrders\",\n      \"description\": \"Get orders\"\n    }\n  ]\n}"
       }
     ]
   }
