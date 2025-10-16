@@ -30,6 +30,7 @@ export function categorizeParameters(
 
   // Find the operation
   const operation = findOperation(openApiSpec, operationId)
+
   if (!operation || !operation.parameters) {
     // If no operation found or no parameters defined, treat all as query params
     return {
@@ -50,12 +51,15 @@ export function categorizeParameters(
         case 'path':
           result.pathParams[paramName] = paramValue
           break
+
         case 'query':
           result.queryParams[paramName] = paramValue
           break
+
         case 'header':
           result.headers[paramName] = paramValue
           break
+
         default:
           // For any other location (like 'cookie'), treat as query param
           result.queryParams[paramName] = paramValue
@@ -80,6 +84,8 @@ function findOperation(
   spec: OpenAPISpec,
   operationId: string
 ): OpenAPIOperation | null {
+  const targetId = operationId.toLowerCase()
+
   if (!spec.paths) {
     return null
   }
@@ -88,13 +94,16 @@ function findOperation(
     if (!pathItem) continue
 
     const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
+
     for (const method of methods) {
       const operation = pathItem[method as keyof typeof pathItem]
+
       if (
         operation &&
         typeof operation === 'object' &&
         'operationId' in operation &&
-        operation.operationId === operationId
+        operation.operationId &&
+        (operation.operationId as string).toLowerCase() === targetId
       ) {
         return operation as OpenAPIOperation
       }
