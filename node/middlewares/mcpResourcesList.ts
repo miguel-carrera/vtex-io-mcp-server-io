@@ -20,12 +20,34 @@ export async function mcpResourcesList(
   let requestBody: MCPRequest | null = null
 
   try {
-    const { req } = ctx
+    const {
+      req,
+      state: {
+        body: { mcpConfig },
+      },
+    } = ctx
 
     // Prefer request body passed by upstream router to avoid re-reading the stream
     requestBody =
       ((ctx.state as any)?.mcpRequest as MCPRequest | undefined) ||
       ((await json(req)) as MCPRequest)
+
+    // Check MCP configuration
+    if (!mcpConfig || !mcpConfig.enabled) {
+      ctx.status = 403
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody?.id || null,
+        error: {
+          code: -32000,
+          message: mcpConfig
+            ? 'MCP server is disabled for this instance'
+            : 'MCP server not found',
+        },
+      }
+
+      return
+    }
 
     // Validate JSON-RPC request
     if (

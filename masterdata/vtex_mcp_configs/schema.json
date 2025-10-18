@@ -1,0 +1,56 @@
+{
+  "properties": {
+    "instance": {
+      "type": "string",
+      "description": "VTEX instance identifier (e.g., myaccount, myaccountvtexio). Empty for default configuration.",
+      "maxLength": 100,
+      "pattern": "^$|^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this MCP server configuration is active",
+      "default": true
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this MCP server configuration",
+      "maxLength": 500
+    },
+    "disabledMethods": {
+      "type": "array",
+      "description": "HTTP methods to disable for API publishing (GET, POST, PUT, DELETE)",
+      "items": {
+        "type": "string",
+        "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+      },
+      "uniqueItems": true,
+      "default": [],
+      "v-multiselect": true,
+      "v-options": [
+        { "label": "GET", "value": "GET" },
+        { "label": "POST", "value": "POST" },
+        { "label": "PUT", "value": "PUT" },
+        { "label": "PATCH", "value": "PATCH" },
+        { "label": "DELETE", "value": "DELETE" },
+        { "label": "HEAD", "value": "HEAD" },
+        { "label": "OPTIONS", "value": "OPTIONS" }
+      ]
+    },
+    "excludeFavorites": {
+      "type": "boolean",
+      "description": "Whether to exclude favorite APIs from being published",
+      "default": false
+    }
+  },
+  "required": ["instance", "enabled"],
+  "v-cache": false,
+  "v-default-fields": [
+    "instance",
+    "enabled",
+    "description",
+    "disabledMethods",
+    "excludeFavorites"
+  ],
+  "v-indexed": ["instance", "enabled"],
+  "v-immediate-indexing": true
+}

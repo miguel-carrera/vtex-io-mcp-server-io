@@ -20,6 +20,8 @@ The MCP server provides two sets of endpoints:
 
 All endpoints are available at: `https://{account}.myvtex.com/_v/mcp_server/v1/`
 
+**Instance Detection**: The MCP server automatically detects the instance from the URL (e.g., "myaccount" from `https://myaccount.myvtex.com/`) and loads the appropriate configuration from MasterData v2.
+
 ## Authentication
 
 All endpoints require VTEX authentication. The server supports two authentication methods:
@@ -44,6 +46,55 @@ All endpoints require VTEX authentication. The server supports two authenticatio
 2. **API Key Authentication**: Validates app credentials and grants admin access
 3. **Authorization**: At least one authentication method must be valid to proceed
 4. **Error Handling**: Returns 401 Authentication Error if no valid authentication is provided
+
+## Instance-Based Configuration
+
+The MCP server supports per-instance configuration through MasterData v2, allowing you to customize server behavior for different VTEX instances.
+
+### Configuration Features
+
+- **Instance-Specific Settings**: Each VTEX instance can have its own MCP server configuration
+- **HTTP Method Filtering**: Disable specific HTTP methods (GET, POST, PUT, DELETE) per instance
+- **Favorites Management**: Mark and manage favorite API operations per instance
+- **Access Control**: Enable/disable MCP server functionality per instance
+
+### Configuration Schema
+
+The `vtex_mcp_configs` data entity stores instance configurations:
+
+```json
+{
+  "instance": "myaccount",
+  "enabled": true,
+  "description": "Production MCP server configuration",
+  "disabledMethods": ["DELETE"],
+  "excludeFavorites": false
+}
+```
+
+### Configuration Validation
+
+All MCP endpoints validate the instance configuration:
+
+- **Missing Configuration**: Returns error "MCP server not found" if no configuration exists for the instance
+- **Disabled Configuration**: Returns error "MCP server is disabled for this instance" if `enabled: false`
+- **Method Filtering**: Disabled HTTP methods are filtered out from API responses
+- **Favorites Exclusion**: When `excludeFavorites: true`, favorite APIs are excluded from published lists
+
+### Error Responses
+
+When configuration validation fails, endpoints return:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32000,
+    "message": "MCP server not found"
+  }
+}
+```
 
 ## Recent Improvements
 
@@ -435,7 +486,11 @@ All endpoints return consistent error responses:
 
 ## Data Storage
 
-API specification metadata is stored in MasterData v2 using the data entity `vtex_mcp_api_specs` with the following schema:
+The MCP server uses three MasterData v2 data entities to store configuration and metadata:
+
+### 1. API Specifications (`vtex_mcp_api_specs`)
+
+Stores API specification metadata:
 
 - `apiGroup`: String - Category/group name (e.g., "OMS", "Catalog")
 - `version`: String - API version (e.g., "1.0", "2.0")
@@ -444,6 +499,28 @@ API specification metadata is stored in MasterData v2 using the data entity `vte
 - `tags`: Array of Strings - Tags for categorization and filtering
 - `enabled`: Boolean - Whether this API group is active
 - `lastUpdated`: String - ISO timestamp of last update
+
+### 2. MCP Configurations (`vtex_mcp_configs`)
+
+Stores per-instance MCP server configurations:
+
+- `instance`: String - VTEX instance identifier (e.g., "myaccount", "myaccountvtexio"). Empty for default configuration
+- `enabled`: Boolean - Whether this MCP server configuration is active
+- `description`: String - Human-readable description of the configuration
+- `disabledMethods`: Array of Strings - HTTP methods to disable (GET, POST, PUT, DELETE)
+- `excludeFavorites`: Boolean - Whether to exclude favorite APIs from being published
+
+### 3. Favorites (`vtex_mcp_favorites`)
+
+Stores favorite API operations per instance:
+
+- `instance`: String - VTEX instance identifier
+- `apiGroup`: String - API group name (e.g., "Orders", "Catalog")
+- `operationId`: String - Unique identifier for the API operation
+- `enabled`: Boolean - Whether this favorite is active
+- `description`: String - Human-readable description
+- `httpMethod`: String - HTTP method for the operation (GET, POST, PUT, DELETE)
+- `path`: String - API endpoint path
 
 The actual OpenAPI specifications are fetched dynamically from the provided URLs using VTEX IO's HTTP client, which includes built-in caching capabilities.
 

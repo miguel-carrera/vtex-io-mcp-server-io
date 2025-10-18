@@ -61,6 +61,10 @@
     "mcp": {
       "path": "/_v/mcp_server/v1/mcp",
       "public": true
+    },
+    "mcpInstance": {
+      "path": "/_v/mcp_server/v1/mcp/:instance",
+      "public": true
     }
   },
   "events": {}

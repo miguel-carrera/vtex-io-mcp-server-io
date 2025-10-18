@@ -26,7 +26,12 @@ export async function mcpRouter(ctx: Context, next: () => Promise<void>) {
   let requestBody: MCPRequest | null = null
 
   try {
-    const { req } = ctx
+    const {
+      req,
+      state: {
+        body: { mcpConfig },
+      },
+    } = ctx
 
     requestBody = (await json(req)) as MCPRequest
 
@@ -34,6 +39,23 @@ export async function mcpRouter(ctx: Context, next: () => Promise<void>) {
       requestBody,
       message: 'mcpRouter request parsed',
     })
+
+    // Check MCP configuration
+    if (!mcpConfig || !mcpConfig.enabled) {
+      ctx.status = 403
+      ctx.body = {
+        jsonrpc: '2.0',
+        id: requestBody.id ?? null,
+        error: {
+          code: -32000,
+          message: mcpConfig
+            ? 'MCP server is disabled for this instance'
+            : 'MCP server not found',
+        },
+      }
+
+      return
+    }
 
     // Validate JSON-RPC request
     if (!requestBody || requestBody.jsonrpc !== '2.0') {

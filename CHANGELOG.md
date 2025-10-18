@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- **Instance-Based Configuration**: Per-instance MCP server configuration through MasterData v2
+  - New `vtex_mcp_configs` data entity for storing instance-specific configurations
+  - Automatic instance detection from URL parameters (e.g., "myaccount" from `https://myaccount.myvtex.com/`)
+  - HTTP method filtering per instance (disable GET, POST, PUT, DELETE methods)
+  - Configuration validation across all MCP endpoints
+  - Default configuration support when no instance-specific config exists
+- **Favorites Management**: Mark and manage favorite API operations per instance
+  - New `vtex_mcp_favorites` data entity for storing favorite operations
+  - Instance-specific favorites with operation metadata
+  - Option to exclude favorites from published API lists
+- **Enhanced Configuration Validation**: All MCP endpoints now validate instance configuration
+  - Returns "MCP server not found" when no configuration exists for the instance
+  - Returns "MCP server is disabled for this instance" when configuration is disabled
+  - Early validation after request parsing for better performance
+- **MasterData Integration**: Enhanced MasterData v2 integration for configuration management
+  - Automatic configuration loading in `initialLoad` middleware
+  - Proper error handling and logging for configuration operations
+  - Type-safe configuration interfaces and validation
+- **Configuration Loading**:
+  - MCP configuration is now loaded automatically from MasterData v2 based on instance
+- **Method Filtering**:
+  - HTTP methods are filtered based on instance configuration in `mcpResourcesRead`
+- **Error Handling**:
+  - Enhanced error responses with proper JSON-RPC error codes for configuration validation
+- **Documentation**:
+  - Updated README and API documentation to include instance-based configuration features
+
+### Technical Improvements
+
+- **Type Safety**: Added `MCPConfig` interface and related types for configuration management
+- **Performance**: Configuration validation moved to early in request processing pipeline
+- **Code Organization**: Improved middleware structure with consistent configuration validation patterns
+
 ## [1.1.0] - 2025-10-16
 
 ### Added

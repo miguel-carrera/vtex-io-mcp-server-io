@@ -1,0 +1,53 @@
+{
+  "properties": {
+    "instance": {
+      "type": "string",
+      "description": "VTEX instance identifier (e.g., myaccount, myaccountvtexio). Empty for default configuration.",
+      "maxLength": 100,
+      "pattern": "^$|^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$"
+    },
+    "apiGroup": {
+      "type": "string",
+      "description": "Category/group name for the API (e.g., Orders, Catalog, Pricing)",
+      "maxLength": 50
+    },
+    "operationId": {
+      "type": "string",
+      "description": "Unique identifier for the API operation",
+      "maxLength": 100
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this favorite is active and available for use",
+      "default": true
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the favorite operation",
+      "maxLength": 500
+    },
+    "httpMethod": {
+      "type": "string",
+      "description": "HTTP method for the operation (GET, POST, PUT, DELETE)",
+      "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+    },
+    "path": {
+      "type": "string",
+      "description": "API endpoint path",
+      "maxLength": 200
+    }
+  },
+  "required": ["instance", "apiGroup", "operationId", "enabled"],
+  "v-cache": false,
+  "v-default-fields": [
+    "instance",
+    "apiGroup",
+    "operationId",
+    "enabled",
+    "description",
+    "httpMethod",
+    "path"
+  ],
+  "v-indexed": ["instance", "apiGroup", "operationId", "enabled", "httpMethod"],
+  "v-immediate-indexing": true
+}

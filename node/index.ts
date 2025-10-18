@@ -112,5 +112,8 @@ export default new Service({
     mcp: method({
       POST: [errorHandler, auth, initialLoad, mcpRouter],
     }),
+    mcpInstance: method({
+      POST: [errorHandler, auth, initialLoad, mcpRouter],
+    }),
   },
 })
