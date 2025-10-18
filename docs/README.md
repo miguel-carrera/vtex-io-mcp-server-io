@@ -15,6 +15,8 @@ This MCP server provides a standardized interface for Large Language Models (LLM
 - 🔍 **API Discovery**: Retrieve structured API definitions for LLM consumption
 - ⚡ **Dynamic Execution**: Execute any VTEX API call based on OpenAPI specs
 - 📝 **Specification Management**: Upload and manage OpenAPI specification URLs
+- 🏢 **Instance-Based Configuration**: Per-instance MCP server configuration with method filtering
+- ⭐ **Favorites Management**: Mark and manage favorite API operations per instance
 - 🔐 **Secure Authentication**: Built-in VTEX IO authentication and authorization
 - 📊 **Centralized Logging**: All operations logged to MasterData for monitoring
 - 🚀 **High Performance**: Built-in caching and optimized data retrieval
@@ -25,7 +27,8 @@ The server is built on VTEX IO and consists of:
 
 - **HTTP Endpoints**: REST API for MCP client communication
 - **Authentication Layer**: Dual authentication (cookie-based and API key-based)
-- **MasterData Integration**: Stores API specification metadata
+- **Instance-Based Configuration**: Per-instance MCP server settings and method filtering
+- **MasterData Integration**: Stores API specification metadata and configurations
 - **Dynamic API Client**: Executes external API calls with caching
 - **OpenAPI Parser**: Validates and processes OpenAPI specifications
 - **Centralized Logging**: Comprehensive logging system
@@ -104,7 +107,52 @@ Upload or update OpenAPI specification URLs to MasterData.
 }
 ```
 
+## Instance-Based Configuration
+
+The MCP server supports per-instance configuration through MasterData v2, allowing you to customize the server behavior for different VTEX instances.
+
+### Configuration Features
+
+- **Instance-Specific Settings**: Each VTEX instance can have its own MCP server configuration
+- **HTTP Method Filtering**: Disable specific HTTP methods (GET, POST, PUT, DELETE) per instance
+- **Favorites Management**: Mark and manage favorite API operations per instance
+- **Default Configuration**: Fallback configuration when no instance-specific config exists
+
+### Configuration Schema
+
+The `vtex_mcp_configs` data entity stores instance configurations:
+
+- `instance`: VTEX instance identifier (e.g., "myaccount", "myaccountvtexio"). Empty for default configuration
+- `enabled`: Whether this MCP server configuration is active
+- `description`: Human-readable description of the configuration
+- `disabledMethods`: Array of HTTP methods to disable (GET, POST, PUT, DELETE)
+- `excludeFavorites`: Whether to exclude favorite APIs from being published
+
+### Example Configuration
+
+```json
+{
+  "instance": "myaccount",
+  "enabled": true,
+  "description": "Production MCP server configuration for myaccount instance",
+  "disabledMethods": ["DELETE"],
+  "excludeFavorites": false
+}
+```
+
+### URL Structure
+
+The MCP server automatically detects the instance from the URL:
+
+```
+https://myaccount.myvtex.com/_v/mcp_server/v1/mcp/tools/list
+```
+
+The instance "myaccount" is extracted and used to load the appropriate configuration.
+
 ## Data Storage
+
+### API Specifications
 
 API specification metadata is stored in MasterData v2 using the `vtex_mcp_api_specs` data entity:
 
@@ -115,6 +163,18 @@ API specification metadata is stored in MasterData v2 using the `vtex_mcp_api_sp
 - `tags`: Array of tags for categorization
 - `enabled`: Whether the API group is active
 - `lastUpdated`: ISO timestamp of last update
+
+### Favorites
+
+Favorite API operations are stored in MasterData v2 using the `vtex_mcp_favorites` data entity:
+
+- `instance`: VTEX instance identifier
+- `apiGroup`: API group name (e.g., "Orders", "Catalog")
+- `operationId`: Unique identifier for the API operation
+- `enabled`: Whether this favorite is active
+- `description`: Human-readable description
+- `httpMethod`: HTTP method for the operation
+- `path`: API endpoint path
 
 ## Installation
 
