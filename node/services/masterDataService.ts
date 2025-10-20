@@ -14,9 +14,25 @@ export interface APISpecDocument extends APISpecData {
   id: string
 }
 
+export interface FavoriteData {
+  instance: string
+  apiGroup: string
+  operationId: string
+  enabled: boolean
+  description?: string
+  httpMethod?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS'
+  path?: string
+}
+
+export interface FavoriteDocument extends FavoriteData {
+  id: string
+}
+
 export class MasterDataService {
   private readonly dataEntity = 'vtex_mcp_api_specs'
   private readonly schema = 'api_specs'
+  private readonly favoritesDataEntity = 'vtex_mcp_favorites'
+  private readonly favoritesSchema = 'favorites'
   private readonly cache = new Map<string, APISpecDocument>()
   private readonly cacheTTL = 5 * 60 * 1000 // 5 minutes
   private readonly cacheTimestamps = new Map<string, number>()
@@ -399,5 +415,87 @@ export class MasterDataService {
     }
 
     return count
+  }
+
+  /**
+   * Retrieve enabled favorites for the given instance (including global ones)
+   */
+  public async getFavorites(
+    instance: string | undefined
+  ): Promise<FavoriteDocument[]> {
+    const normalizedInstance = (instance || '').trim()
+    const cacheKey = `favorites_${normalizedInstance || 'default'}`
+
+    if (this.isCacheValid(cacheKey)) {
+      const cached = this.cache.get(cacheKey) as unknown as
+        | FavoriteDocument[]
+        | undefined
+
+      if (cached) {
+        return cached
+      }
+    }
+
+    try {
+      const whereParts = ['enabled=true']
+
+      if (normalizedInstance) {
+        // Include instance-specific and global favorites
+        whereParts.push(`(instance=${normalizedInstance} OR instance="")`)
+      } else {
+        // Only global favorites when no instance provided
+        whereParts.push('instance=""')
+      }
+
+      const response = await this.ctx.clients.masterdata.searchDocuments({
+        dataEntity: this.favoritesDataEntity,
+        schema: this.favoritesSchema,
+        fields: [
+          'id',
+          'instance',
+          'apiGroup',
+          'operationId',
+          'enabled',
+          'description',
+          'httpMethod',
+          'path',
+        ],
+        where: whereParts.join(' AND '),
+        pagination: {
+          page: 1,
+          pageSize: 100,
+        },
+      })
+
+      const favorites: FavoriteDocument[] = (response as any[]).map((doc) => ({
+        id: (doc as any).id,
+        instance: (doc as any).instance ?? '',
+        apiGroup: (doc as any).apiGroup,
+        operationId: (doc as any).operationId,
+        enabled: Boolean((doc as any).enabled),
+        description: (doc as any).description,
+        httpMethod: (doc as any).httpMethod,
+        path: (doc as any).path,
+      }))
+
+      favorites.sort(
+        (a, b) =>
+          a.apiGroup.localeCompare(b.apiGroup) ||
+          a.operationId.localeCompare(b.operationId)
+      )
+
+      this.setCache(cacheKey, favorites as unknown as any)
+
+      return favorites
+    } catch (error) {
+      await logToMasterData(
+        this.ctx,
+        'getFavorites',
+        'masterDataService',
+        'error',
+        error
+      )
+      throw new Error('Failed to retrieve favorites')
+    }
   }
 }

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Dynamic MCP tools generated from MasterData favorites
+  - Tools are created for each enabled `vtex_mcp_favorites` document (global or per-instance)
+  - Tool name format: `apiGroup_operationId`
+  - Tool `inputSchema` is derived from the operation's OpenAPI parameters (path + query)
+  - Required fields are enforced for path params and any parameter marked `required` in the spec
+  - Supports fallback lookup by `httpMethod` + `path` if `operationId` matching is unavailable
+
+### Changed
+
+- `mcp/tools/list` now appends favorite-based tools after the general tools
+
+### Technical Improvements
+
+- Added `getFavorites(instance)` to `MasterDataService` (cached, schema `favorites`)
+- Favorites fetched using filter `enabled=true AND (instance={instance} OR instance="")`
 
 ## [1.2.0] - 2025-10-18
 

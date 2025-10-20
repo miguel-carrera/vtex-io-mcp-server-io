@@ -806,10 +806,31 @@ The following endpoints implement the Model Context Protocol (MCP) specification
           },
           "required": ["apiGroup"]
         }
+      },
+      {
+        "name": "Orders_GetOrder",
+        "description": "Execute Orders.GetOrder (GET /api/oms/pvt/orders/{orderId})",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "orderId": { "type": "string", "description": "Order identifier" }
+          },
+          "required": ["orderId"]
+        }
       }
     ]
   }
 }
+#### Favorite-based tools
+
+- Tools are dynamically generated from `vtex_mcp_favorites` (global and per-instance).
+- Tool name: `apiGroup_operationId` (non-alphanumeric characters sanitized to `_`).
+- Tool `inputSchema` mirrors the OpenAPI operation's `path` and `query` parameters:
+  - Each parameter becomes a property with type mapping, description, enum, and format when available.
+  - `required` includes all path params and any param marked `required` in the spec.
+- Operation resolution:
+  - Prefer `operationId` matching.
+  - Fallback to `httpMethod` + `path` from the favorite document when necessary.
 ```
 
 ### 10. MCP Tools/Call

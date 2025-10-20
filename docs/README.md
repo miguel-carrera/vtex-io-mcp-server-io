@@ -17,6 +17,7 @@ This MCP server provides a standardized interface for Large Language Models (LLM
 - 📝 **Specification Management**: Upload and manage OpenAPI specification URLs
 - 🏢 **Instance-Based Configuration**: Per-instance MCP server configuration with method filtering
 - ⭐ **Favorites Management**: Mark and manage favorite API operations per instance
+  - Dynamic MCP tools are generated from favorites: each favorite becomes a tool named `apiGroup_operationId` with input schema matching path and query parameters
 - 🔐 **Secure Authentication**: Built-in VTEX IO authentication and authorization
 - 📊 **Centralized Logging**: All operations logged to MasterData for monitoring
 - 🚀 **High Performance**: Built-in caching and optimized data retrieval
